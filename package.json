@@ -1,22 +1,22 @@
 {
-  "name": "candidate-dashboard",
+  "name": "edge-candidates-market-place",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "description": "Candidate marketplace platform for displaying and evaluating pre-assessed candidates",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "preview": "cd frontend && npm run preview",
+    "install": "cd frontend && npm install",
+    "install:all": "cd frontend && npm install"
   },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^5.1.0",
-    "typescript": "~5.9.3",
-    "vite": "^7.1.7"
-  },
-  "dependencies": {
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+  "workspaces": [
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }
+
+
