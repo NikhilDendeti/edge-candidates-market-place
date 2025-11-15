@@ -1,0 +1,112 @@
+/**
+ * Candidate service
+ * Handles candidate list queries with filtering and sorting
+ */
+
+import { supabase } from '../config/supabase.js'
+import { DatabaseError } from '../utils/errors.js'
+import { Candidate, CandidateFilters } from '../types/candidate.types.js'
+import { transformToCandidate } from '../utils/transformers.js'
+import { PaginationMeta } from '../types/api.types.js'
+
+export interface CandidateListResult {
+  data: Candidate[]
+  pagination: PaginationMeta
+}
+
+/**
+ * Get candidates list with filters and pagination
+ */
+export async function getCandidates(filters: CandidateFilters): Promise<CandidateListResult> {
+  try {
+    // Build base query - fetch all students with relations
+    // Note: For assessment/interview sorting, we need all data first
+    let query = supabase
+      .from('students')
+      .select(`
+        *,
+        colleges (*),
+        assessments (
+          *,
+          assessment_scores (
+            *,
+            score_types (*)
+          )
+        ),
+        interviews (*)
+      `, { count: 'exact' })
+
+    // Apply search filter
+    if (filters.search) {
+      const searchTerm = `%${filters.search}%`
+      query = query.or(`full_name.ilike.${searchTerm},colleges.name.ilike.${searchTerm},colleges.branch.ilike.${searchTerm}`)
+    }
+
+    // For simple sorts, apply at database level
+    if (filters.sort === 'cgpa') {
+      query = query.order('cgpa', { ascending: filters.order === 'asc' })
+    } else if (filters.sort === 'latest') {
+      query = query.order('created_at', { ascending: filters.order === 'asc' })
+    } else {
+      // Default sort by created_at
+      query = query.order('created_at', { ascending: filters.order === 'asc' })
+    }
+
+    // Execute query - fetch all matching records
+    const { data, error, count } = await query
+
+    if (error) throw error
+
+    // Transform data
+    let candidates = (data || []).map(transformToCandidate)
+
+    // Apply assessment/interview sorting if needed (post-query)
+    if (filters.sort === 'assessment_avg') {
+      candidates.sort((a, b) => {
+        // Extract numeric score from "XXX / YYY" format
+        const aScore = parseFloat(a.assessmentScore.split(' / ')[0]) || 0
+        const bScore = parseFloat(b.assessmentScore.split(' / ')[0]) || 0
+        return filters.order === 'asc' ? aScore - bScore : bScore - aScore
+      })
+    } else if (filters.sort === 'interview_avg') {
+      candidates.sort((a, b) => {
+        // Extract numeric rating from "X.X / 10" format
+        const aRating = parseFloat(a.interviewScore.split(' / ')[0]) || 0
+        const bRating = parseFloat(b.interviewScore.split(' / ')[0]) || 0
+        return filters.order === 'asc' ? aRating - bRating : bRating - aRating
+      })
+    }
+
+    // Apply verdict filter (post-query since it's from interviews)
+    if (filters.verdict && filters.verdict !== 'All') {
+      const verdictMap: Record<string, Candidate['recommendation']> = {
+        Strong: 'Strong Hire',
+        Medium: 'Medium Fit',
+        Low: 'Consider',
+      }
+      candidates = candidates.filter((c) => c.recommendation === verdictMap[filters.verdict!])
+    }
+
+    // Calculate total after filtering
+    const totalAfterFilter = candidates.length
+    const totalPages = Math.ceil(totalAfterFilter / filters.limit)
+
+    // Apply pagination to filtered and sorted results
+    const from = (filters.page - 1) * filters.limit
+    const to = from + filters.limit
+    const paginatedCandidates = candidates.slice(from, to)
+
+    return {
+      data: paginatedCandidates,
+      pagination: {
+        page: filters.page,
+        limit: filters.limit,
+        total: totalAfterFilter,
+        totalPages,
+      },
+    }
+  } catch (error: any) {
+    throw new DatabaseError('Failed to fetch candidates', error)
+  }
+}
+

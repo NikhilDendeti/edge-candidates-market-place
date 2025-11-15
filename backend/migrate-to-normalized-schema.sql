@@ -1,14 +1,32 @@
--- Database Schema for Edge Candidates Marketplace
--- Normalized schema with 6 core tables
--- Run this SQL in your Supabase SQL Editor to create the tables
+-- Migration Script: Replace candidates table with normalized schema
+-- Run this SQL in your Supabase SQL Editor to migrate from old to new schema
+-- WARNING: This will DELETE all data in the candidates table!
 
 -- ============================================================================
--- TABLE CREATION (in dependency order)
+-- STEP 1: Drop old schema (candidates table and related objects)
+-- ============================================================================
+
+-- Drop the old candidates table (CASCADE will automatically drop triggers and policies)
+DROP TABLE IF EXISTS candidates CASCADE;
+
+-- Drop new tables if they exist (in reverse dependency order to avoid FK issues)
+DROP TABLE IF EXISTS assessment_scores CASCADE;
+DROP TABLE IF EXISTS interviews CASCADE;
+DROP TABLE IF EXISTS assessments CASCADE;
+DROP TABLE IF EXISTS students CASCADE;
+DROP TABLE IF EXISTS score_types CASCADE;
+DROP TABLE IF EXISTS colleges CASCADE;
+
+-- Drop the trigger function if it exists
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
+
+-- ============================================================================
+-- STEP 2: Create new normalized schema
 -- ============================================================================
 
 -- 1. College Table
 -- Represents educational institutions where students study
-CREATE TABLE IF NOT EXISTS colleges (
+CREATE TABLE colleges (
   college_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   degree VARCHAR(100) NOT NULL,
@@ -27,7 +45,7 @@ COMMENT ON COLUMN colleges.nirf_ranking IS 'NIRF ranking of the college (nullabl
 
 -- 2. ScoreType Table
 -- Normalizes different types of assessment scores/metrics
-CREATE TABLE IF NOT EXISTS score_types (
+CREATE TABLE score_types (
   score_type_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   key VARCHAR(50) NOT NULL UNIQUE,
   display_name VARCHAR(100) NOT NULL,
@@ -40,7 +58,7 @@ COMMENT ON COLUMN score_types.key IS 'Unique identifier key (e.g., coding, dsa, 
 
 -- 3. Student Table
 -- Represents individual candidates/users
-CREATE TABLE IF NOT EXISTS students (
+CREATE TABLE students (
   nxtwave_user_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   full_name VARCHAR(255) NOT NULL,
   phone VARCHAR(20),
@@ -49,9 +67,10 @@ CREATE TABLE IF NOT EXISTS students (
   resume_url TEXT,
   graduation_year INTEGER,
   cgpa NUMERIC(4,2) CHECK (cgpa >= 0 AND cgpa <= 10),
-  college_id UUID REFERENCES colleges(college_id) ON DELETE SET NULL,
+  college_id UUID,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT fk_students_college FOREIGN KEY (college_id) REFERENCES colleges(college_id) ON DELETE SET NULL
 );
 
 COMMENT ON TABLE students IS 'Individual candidates/students in the marketplace';
@@ -60,16 +79,17 @@ COMMENT ON COLUMN students.cgpa IS 'Cumulative Grade Point Average (0-10 scale)'
 
 -- 4. Assessment Table
 -- Represents assessment events taken by students
-CREATE TABLE IF NOT EXISTS assessments (
+CREATE TABLE assessments (
   assessment_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  student_id UUID NOT NULL REFERENCES students(nxtwave_user_id) ON DELETE CASCADE,
+  student_id UUID NOT NULL,
   taken_at TIMESTAMP WITH TIME ZONE NOT NULL,
   report_url TEXT,
   total_student_score NUMERIC(10,2),
   total_assessment_score NUMERIC(10,2),
   percent NUMERIC(5,2) CHECK (percent >= 0 AND percent <= 100),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT fk_assessments_student FOREIGN KEY (student_id) REFERENCES students(nxtwave_user_id) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE assessments IS 'Assessment events completed by students';
@@ -77,14 +97,16 @@ COMMENT ON COLUMN assessments.percent IS 'Percentage score (0-100)';
 
 -- 5. AssessmentScore Table
 -- Normalized breakdown of scores by type for each assessment
-CREATE TABLE IF NOT EXISTS assessment_scores (
+CREATE TABLE assessment_scores (
   assessment_score_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  assessment_id UUID NOT NULL REFERENCES assessments(assessment_id) ON DELETE CASCADE,
-  score_type_id UUID NOT NULL REFERENCES score_types(score_type_id),
+  assessment_id UUID NOT NULL,
+  score_type_id UUID NOT NULL,
   score NUMERIC(10,2) NOT NULL,
   max_score NUMERIC(10,2) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  CONSTRAINT unique_assessment_score_type UNIQUE (assessment_id, score_type_id)
+  CONSTRAINT unique_assessment_score_type UNIQUE (assessment_id, score_type_id),
+  CONSTRAINT fk_assessment_scores_assessment FOREIGN KEY (assessment_id) REFERENCES assessments(assessment_id) ON DELETE CASCADE,
+  CONSTRAINT fk_assessment_scores_score_type FOREIGN KEY (score_type_id) REFERENCES score_types(score_type_id)
 );
 
 COMMENT ON TABLE assessment_scores IS 'Detailed score breakdown by type for each assessment';
@@ -92,9 +114,9 @@ COMMENT ON CONSTRAINT unique_assessment_score_type ON assessment_scores IS 'One 
 
 -- 6. Interview Table
 -- Represents interview events for students
-CREATE TABLE IF NOT EXISTS interviews (
+CREATE TABLE interviews (
   interview_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  student_id UUID NOT NULL REFERENCES students(nxtwave_user_id) ON DELETE CASCADE,
+  student_id UUID NOT NULL,
   interview_date TIMESTAMP WITH TIME ZONE NOT NULL,
   recording_url TEXT,
   self_intro_rating NUMERIC(3,1) CHECK (self_intro_rating >= 0 AND self_intro_rating <= 10),
@@ -104,7 +126,8 @@ CREATE TABLE IF NOT EXISTS interviews (
   overall_interview_rating NUMERIC(3,1) CHECK (overall_interview_rating >= 0 AND overall_interview_rating <= 10),
   overall_label VARCHAR(50) CHECK (overall_label IN ('Strong Hire', 'Medium Fit', 'Consider')),
   notes TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT fk_interviews_student FOREIGN KEY (student_id) REFERENCES students(nxtwave_user_id) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE interviews IS 'Interview events conducted with students';
@@ -247,5 +270,7 @@ INSERT INTO colleges (name, degree, branch, city, state, country, nirf_ranking) 
 ('IIIT Delhi', 'B.Tech', 'Electronics & Communication', 'Delhi', 'Delhi', 'India', 3)
 ON CONFLICT (name, degree, branch) DO NOTHING;
 
+-- Migration complete!
 -- Note: Sample student, assessment, and interview data should be inserted
 -- after the tables are created, referencing the college_ids from above inserts.
+
