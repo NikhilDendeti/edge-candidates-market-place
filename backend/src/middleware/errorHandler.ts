@@ -10,7 +10,7 @@ export function errorHandler(
   err: Error | ApiError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) {
   // Log error with context
   const timestamp = new Date().toISOString()
