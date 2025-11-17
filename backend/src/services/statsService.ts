@@ -61,8 +61,11 @@ export async function getBranchDistribution(): Promise<BranchDistribution[]> {
 
     // Count branches
     const branchCounts: Record<string, number> = {}
-    students?.forEach((student) => {
-      const branch = student.colleges?.branch
+    students?.forEach((student: any) => {
+      const collegeRecord = Array.isArray(student.colleges)
+        ? student.colleges[0]
+        : student.colleges
+      const branch = collegeRecord?.branch
       if (branch) {
         const normalized = normalizeBranchName(branch)
         branchCounts[normalized] = (branchCounts[normalized] || 0) + 1

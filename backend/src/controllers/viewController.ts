@@ -21,13 +21,14 @@ import {
  * Log a candidate view
  * POST /api/candidates/:id/view
  */
-export async function logView(req: Request, res: Response, next: NextFunction) {
+export async function logView(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const candidateId = validateCandidateId(req.params.id)
     const userData = validateViewLogRequest(req.body)
     const result = await logCandidateView(candidateId, userData)
 
-    return res.status(201).json(result)
+    res.status(201).json(result)
+    return
   } catch (error) {
     next(error)
   }
@@ -41,13 +42,14 @@ export async function getUserViewHistoryHandler(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   try {
     const email = validateEmail(req.params.email)
     const filters = validateViewHistoryFilters(req.query)
     const result = await getUserViewHistory(email, filters)
 
-    return res.status(200).json(result)
+    res.status(200).json(result)
+    return
   } catch (error) {
     next(error)
   }
@@ -61,13 +63,14 @@ export async function getCandidateViewersHandler(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   try {
     const candidateId = validateCandidateId(req.params.id)
     const filters = validateViewHistoryFilters(req.query)
     const result = await getCandidateViewers(candidateId, filters)
 
-    return res.status(200).json(result)
+    res.status(200).json(result)
+    return
   } catch (error) {
     next(error)
   }
@@ -81,12 +84,13 @@ export async function getUserViewStatsHandler(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   try {
     const email = validateEmail(req.params.email)
     const result = await getUserViewStats(email)
 
-    return res.status(200).json(result)
+    res.status(200).json(result)
+    return
   } catch (error) {
     next(error)
   }

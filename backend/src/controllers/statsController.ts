@@ -5,23 +5,25 @@
 import { Request, Response, NextFunction } from 'express'
 import { getStatsSummary, getBranchDistribution } from '../services/statsService.js'
 
-export async function getSummary(req: Request, res: Response, next: NextFunction) {
+export async function getSummary(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const summary = await getStatsSummary()
     
     // Explicitly set 200 status code
-    return res.status(200).json(summary)
+    res.status(200).json(summary)
+    return
   } catch (error) {
     next(error)
   }
 }
 
-export async function getBranchDistributionHandler(req: Request, res: Response, next: NextFunction) {
+export async function getBranchDistributionHandler(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const distribution = await getBranchDistribution()
     
     // Explicitly set 200 status code
-    return res.status(200).json(distribution)
+    res.status(200).json(distribution)
+    return
   } catch (error) {
     next(error)
   }

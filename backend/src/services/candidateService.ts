@@ -53,7 +53,7 @@ export async function getCandidates(filters: CandidateFilters): Promise<Candidat
     }
 
     // Execute query - fetch all matching records
-    const { data, error, count } = await query
+    const { data, error } = await query
 
     if (error) throw error
 

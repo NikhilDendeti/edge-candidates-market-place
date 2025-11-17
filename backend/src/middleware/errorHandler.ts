@@ -49,7 +49,8 @@ export function errorHandler(
       res.setHeader('Retry-After', retryAfter.toString())
     }
 
-    return res.status(err.statusCode).json(errorResponse)
+    res.status(err.statusCode).json(errorResponse)
+    return
   }
 
   // Handle unknown errors - convert to InternalServerError
@@ -72,5 +73,6 @@ export function errorHandler(
   }
 
   res.status(500).json(errorResponse)
+  return
 }
 
