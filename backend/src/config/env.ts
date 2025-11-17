@@ -6,13 +6,15 @@ import dotenv from 'dotenv'
 import { resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
+import { existsSync } from 'fs'
 
-// Load .env from root directory
+// Load .env from root directory (if it exists)
+// In production (e.g., Render), environment variables are set directly, so .env file may not exist
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 // Try multiple path resolution strategies
-let rootEnvPath = resolve(__dirname, '../../../.env') // From backend/src/config/env.ts -> backend -> root
+let rootEnvPath = resolve(__dirname, '../../../.env') // From dist/config/env.js -> dist -> backend -> root
 
 // If we're in backend/, go up one level
 if (process.cwd().endsWith('backend')) {
@@ -22,7 +24,14 @@ if (process.cwd().endsWith('backend')) {
   rootEnvPath = resolve(process.cwd(), '.env')
 }
 
-dotenv.config({ path: rootEnvPath })
+// Only load .env file if it exists (for local development)
+// In production, environment variables are set directly by the platform
+if (existsSync(rootEnvPath)) {
+  dotenv.config({ path: rootEnvPath })
+} else {
+  // Silently continue - environment variables will come from process.env
+  dotenv.config() // This will look for .env in current directory, but won't error if missing
+}
 
 // Parse frontend URLs - support comma-separated list for multiple origins
 const parseFrontendUrls = (): string[] => {
@@ -42,7 +51,18 @@ export const env = {
 }
 
 // Validate required environment variables
-if (!env.supabaseUrl || !env.supabaseServiceKey) {
-  throw new Error('Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY')
+const missingVars: string[] = []
+if (!env.supabaseUrl) {
+  missingVars.push('SUPABASE_URL')
+}
+if (!env.supabaseServiceKey) {
+  missingVars.push('SUPABASE_SERVICE_ROLE_KEY')
+}
+
+if (missingVars.length > 0) {
+  const errorMessage = `Missing required environment variables: ${missingVars.join(', ')}\n` +
+    `Please set these in your Render dashboard under Environment Variables.`
+  console.error('❌ Configuration Error:', errorMessage)
+  throw new Error(errorMessage)
 }
 
