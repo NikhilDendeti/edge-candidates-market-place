@@ -12,7 +12,8 @@
 2. [Statistics Endpoints](#statistics-endpoints)
 3. [Candidates Endpoints](#candidates-endpoints)
 4. [Students Endpoints](#students-endpoints)
-5. [Error Responses](#error-responses)
+5. [View Tracking Endpoints](#view-tracking-endpoints)
+6. [Error Responses](#error-responses)
 
 ---
 
@@ -514,6 +515,335 @@ curl http://localhost:3001/api/students/3c6e6834-cffb-4a17-845d-905d94f05f50
 
 - **404 Not Found**: Student with given ID does not exist
 - **400 Bad Request**: Invalid UUID format
+
+---
+
+## View Tracking Endpoints
+
+### POST `/api/candidates/:id/view`
+
+Log a view when a user views a candidate profile.
+
+**Request**:
+```http
+POST /api/candidates/{id}/view
+Content-Type: application/json
+
+{
+  "email": "hr@company.com",
+  "name": "John Smith",
+  "company": "Tech Corp",
+  "phone": "+91 9876543210"
+}
+```
+
+**Path Parameters**:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | UUID/VARCHAR | Yes | Candidate's nxtwave_user_id |
+
+**Request Body**:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `email` | string | Yes | User's email address (must be valid email format) |
+| `name` | string | Yes | User's full name |
+| `company` | string | No | Company/organization name |
+| `phone` | string | No | Phone number |
+
+**Response** (201 Created):
+```json
+{
+  "message": "View logged successfully",
+  "viewId": "v1v2v3v4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+  "userId": "u1u2u3u4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+  "candidateId": "3c6e6834-cffb-4a17-845d-905d94f05f50",
+  "viewedAt": "2024-11-15T10:30:00+05:30"
+}
+```
+
+**Response Fields**:
+- `message` (string): Success message
+- `viewId` (string, UUID): Unique identifier for the view record
+- `userId` (string, UUID): User's unique identifier (created if new)
+- `candidateId` (string): Candidate's nxtwave_user_id
+- `viewedAt` (string, ISO 8601): Timestamp when view was logged (India timezone)
+
+**Example**:
+```bash
+curl -X POST http://localhost:3001/api/candidates/3c6e6834-cffb-4a17-845d-905d94f05f50/view \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "hr@company.com",
+    "name": "John Smith",
+    "company": "Tech Corp",
+    "phone": "+91 9876543210"
+  }'
+```
+
+**Notes**:
+- If user with email doesn't exist, a new user record is automatically created
+- If user exists, their information (name, company, phone) is updated if provided
+- Multiple views by same user for same candidate are allowed (tracked with different timestamps)
+- Candidate name is automatically fetched and stored in the view record
+
+**Error Responses**:
+- **400 Bad Request**: Missing required fields (email, name) or invalid email format
+- **404 Not Found**: Candidate with given ID does not exist
+- **500 Internal Server Error**: Database error
+
+---
+
+### GET `/api/users/:email/candidates`
+
+Get all candidates viewed by a specific user.
+
+**Request**:
+```http
+GET /api/users/{email}/candidates?page=1&limit=20&sort=viewed_at&order=desc
+```
+
+**Path Parameters**:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `email` | string | Yes | User's email address |
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `page` | number | No | `1` | Page number (must be positive integer) |
+| `limit` | number | No | `20` | Items per page (max: 100, must be positive) |
+| `sort` | enum | No | `viewed_at` | Sort field: `viewed_at` or `candidate_name` |
+| `order` | enum | No | `desc` | Sort order: `asc` or `desc` |
+
+**Response** (200 OK):
+```json
+{
+  "user": {
+    "userId": "u1u2u3u4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+    "email": "hr@company.com",
+    "name": "John Smith",
+    "company": "Tech Corp",
+    "phone": "+91 9876543210"
+  },
+  "data": [
+    {
+      "viewId": "v1v2v3v4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "candidateId": "3c6e6834-cffb-4a17-845d-905d94f05f50",
+      "candidateName": "John Doe",
+      "viewedAt": "2024-11-15T10:30:00+05:30",
+      "candidate": {
+        "cgpa": "9.41",
+        "college": "IIIT Hyderabad",
+        "branch": "Computer Science"
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 5,
+    "totalPages": 1
+  }
+}
+```
+
+**Response Fields**:
+- `user` (object): User information
+  - `userId` (string, UUID): User's unique identifier
+  - `email` (string): Email address
+  - `name` (string): Full name
+  - `company` (string, optional): Company name
+  - `phone` (string, optional): Phone number
+- `data` (array): Array of candidate view entries
+  - `viewId` (string, UUID): View record ID
+  - `candidateId` (string): Candidate's nxtwave_user_id
+  - `candidateName` (string): Candidate's name
+  - `viewedAt` (string, ISO 8601): When the view occurred
+  - `candidate` (object, optional): Additional candidate details
+    - `cgpa` (string): CGPA formatted as "X.XX"
+    - `college` (string): College name
+    - `branch` (string): Branch name
+- `pagination` (object): Pagination metadata
+
+**Example**:
+```bash
+# Get user's viewing history
+curl "http://localhost:3001/api/users/hr@company.com/candidates"
+
+# With pagination and sorting
+curl "http://localhost:3001/api/users/hr@company.com/candidates?page=1&limit=10&sort=candidate_name&order=asc"
+```
+
+**Error Responses**:
+- **400 Bad Request**: Invalid email format or invalid query parameters
+- **404 Not Found**: User with given email does not exist
+- **500 Internal Server Error**: Database error
+
+---
+
+### GET `/api/candidates/:id/viewers`
+
+Get all users who viewed a specific candidate.
+
+**Request**:
+```http
+GET /api/candidates/{id}/viewers?page=1&limit=20&sort=viewed_at&order=desc
+```
+
+**Path Parameters**:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | UUID/VARCHAR | Yes | Candidate's nxtwave_user_id |
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `page` | number | No | `1` | Page number (must be positive integer) |
+| `limit` | number | No | `20` | Items per page (max: 100, must be positive) |
+| `sort` | enum | No | `viewed_at` | Sort field: `viewed_at` or `user_name` |
+| `order` | enum | No | `desc` | Sort order: `asc` or `desc` |
+
+**Response** (200 OK):
+```json
+{
+  "candidate": {
+    "candidateId": "3c6e6834-cffb-4a17-845d-905d94f05f50",
+    "candidateName": "John Doe",
+    "totalViews": 5,
+    "uniqueViewers": 3
+  },
+  "data": [
+    {
+      "viewId": "v1v2v3v4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "userId": "u1u2u3u4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "user": {
+        "userId": "u1u2u3u4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+        "email": "hr@company.com",
+        "name": "John Smith",
+        "company": "Tech Corp",
+        "phone": "+91 9876543210"
+      },
+      "viewedAt": "2024-11-15T10:30:00+05:30"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 5,
+    "totalPages": 1
+  }
+}
+```
+
+**Response Fields**:
+- `candidate` (object): Candidate information and statistics
+  - `candidateId` (string): Candidate's nxtwave_user_id
+  - `candidateName` (string): Candidate's name
+  - `totalViews` (number): Total number of views (including repeat views)
+  - `uniqueViewers` (number): Number of unique users who viewed this candidate
+- `data` (array): Array of viewer entries
+  - `viewId` (string, UUID): View record ID
+  - `userId` (string, UUID): User's unique identifier
+  - `user` (object): User information
+  - `viewedAt` (string, ISO 8601): When the view occurred
+- `pagination` (object): Pagination metadata
+
+**Example**:
+```bash
+# Get all viewers for a candidate
+curl "http://localhost:3001/api/candidates/3c6e6834-cffb-4a17-845d-905d94f05f50/viewers"
+
+# Sort by user name
+curl "http://localhost:3001/api/candidates/3c6e6834-cffb-4a17-845d-905d94f05f50/viewers?sort=user_name&order=asc"
+```
+
+**Error Responses**:
+- **400 Bad Request**: Invalid candidate ID format or invalid query parameters
+- **404 Not Found**: Candidate with given ID does not exist
+- **500 Internal Server Error**: Database error
+
+---
+
+### GET `/api/users/:email/stats`
+
+Get viewing statistics for a user.
+
+**Request**:
+```http
+GET /api/users/{email}/stats
+```
+
+**Path Parameters**:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `email` | string | Yes | User's email address |
+
+**Response** (200 OK):
+```json
+{
+  "user": {
+    "userId": "u1u2u3u4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+    "email": "hr@company.com",
+    "name": "John Smith",
+    "company": "Tech Corp",
+    "phone": "+91 9876543210"
+  },
+  "stats": {
+    "totalViews": 15,
+    "uniqueCandidates": 10,
+    "firstViewAt": "2024-11-10T09:00:00+05:30",
+    "lastViewAt": "2024-11-15T10:30:00+05:30",
+    "viewsByDate": [
+      {
+        "date": "2024-11-15",
+        "count": 3
+      },
+      {
+        "date": "2024-11-14",
+        "count": 5
+      },
+      {
+        "date": "2024-11-13",
+        "count": 2
+      }
+    ]
+  }
+}
+```
+
+**Response Fields**:
+- `user` (object): User information
+- `stats` (object): Viewing statistics
+  - `totalViews` (number): Total number of views by this user
+  - `uniqueCandidates` (number): Number of unique candidates viewed
+  - `firstViewAt` (string, ISO 8601, optional): Timestamp of first view
+  - `lastViewAt` (string, ISO 8601, optional): Timestamp of most recent view
+  - `viewsByDate` (array): Array of view counts grouped by date (last 30 days)
+    - `date` (string): Date in YYYY-MM-DD format (India timezone)
+    - `count` (number): Number of views on this date
+
+**Example**:
+```bash
+curl "http://localhost:3001/api/users/hr@company.com/stats"
+```
+
+**Error Responses**:
+- **400 Bad Request**: Invalid email format
+- **404 Not Found**: User with given email does not exist
+- **500 Internal Server Error**: Database aggregation error
+
+**Notes**:
+- Dates are in India timezone (Asia/Kolkata)
+- `viewsByDate` is sorted by date descending (most recent first)
+- Limited to last 30 days of data
+- If user has no views, `firstViewAt` and `lastViewAt` will be `undefined`
 
 ---
 

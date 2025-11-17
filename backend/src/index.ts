@@ -10,12 +10,32 @@ import { errorHandler } from './middleware/errorHandler.js'
 import candidateRoutes from './routes/candidates.js'
 import studentRoutes from './routes/students.js'
 import statsRoutes from './routes/stats.js'
+import userRoutes from './routes/users.js'
 
 const app = express()
 
 // Middleware
+// CORS configuration - support multiple origins for frontend on different machines
 app.use(cors({
-  origin: env.frontendUrl,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.) in development
+    if (!origin && env.nodeEnv === 'development') {
+      return callback(null, true)
+    }
+    
+    // Check if origin is in allowed list
+    if (origin && env.frontendUrls.includes(origin)) {
+      return callback(null, true)
+    }
+    
+    // In development, allow all origins (useful for testing on different machines)
+    if (env.nodeEnv === 'development') {
+      return callback(null, true)
+    }
+    
+    // In production, reject unknown origins
+    callback(new Error('Not allowed by CORS'))
+  },
   credentials: true,
 }))
 
@@ -30,6 +50,7 @@ app.get('/health', (req, res) => {
 app.use('/api/stats', statsRoutes)
 app.use('/api/candidates', candidateRoutes)
 app.use('/api/students', studentRoutes)
+app.use('/api/users', userRoutes)
 
 // Error handling
 app.use(errorHandler)
@@ -37,10 +58,14 @@ app.use(errorHandler)
 // Start server
 const PORT = env.port
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`📡 Environment: ${env.nodeEnv}`)
-  console.log(`🔗 Frontend URL: ${env.frontendUrl}`)
+  console.log(`🔗 Allowed Frontend URLs: ${env.frontendUrls.join(', ')}`)
+  console.log(`🌐 Server accessible on: http://0.0.0.0:${PORT}`)
   console.log(`✅ Health check: http://localhost:${PORT}/health`)
+  if (env.nodeEnv === 'development') {
+    console.log(`⚠️  Development mode: CORS allows all origins`)
+  }
 })
 
