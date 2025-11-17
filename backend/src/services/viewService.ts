@@ -13,7 +13,7 @@ import {
   UserViewStats,
   ViewHistoryFilters,
 } from '../types/view.types.js'
-import { PaginationMeta } from '../types/api.types.js'
+import { getCandidateAlias, maskEmail, maskPhone } from '../utils/anonymizer.js'
 
 /**
  * Log a candidate view
@@ -163,6 +163,8 @@ export async function getUserViewHistory(
       throw new NotFoundError('User')
     }
 
+    const maskedUserEmail = maskEmail(user.email)
+
     // 2. Get total count
     const { count, error: countError } = await supabase
       .from('candidate_views')
@@ -219,7 +221,7 @@ export async function getUserViewHistory(
     const data = (views || []).map((view: any) => ({
       viewId: view.view_id,
       candidateId: view.candidate_id,
-      candidateName: view.candidate_name,
+      candidateName: getCandidateAlias(view.candidate_id),
       viewedAt: view.viewed_at,
       candidate: candidateMap.get(view.candidate_id),
     }))
@@ -227,10 +229,10 @@ export async function getUserViewHistory(
     return {
       user: {
         userId: user.user_id,
-        email: user.email,
+        email: maskedUserEmail,
         name: user.name,
         company: user.company || undefined,
-        phone: user.phone || undefined,
+        phone: user.phone ? maskPhone(user.phone) : undefined,
       },
       data,
       pagination: {
@@ -273,6 +275,8 @@ export async function getCandidateViewers(
     if (!student) {
       throw new NotFoundError('Candidate')
     }
+
+    const candidateAlias = getCandidateAlias(candidateId)
 
     // 2. Get statistics
     const { count: totalViews, error: statsError } = await supabase
@@ -332,10 +336,10 @@ export async function getCandidateViewers(
         u.user_id,
         {
           userId: u.user_id,
-          email: u.email,
+          email: maskEmail(u.email),
           name: u.name,
           company: u.company || undefined,
-          phone: u.phone || undefined,
+          phone: u.phone ? maskPhone(u.phone) : undefined,
         },
       ])
     )
@@ -346,7 +350,7 @@ export async function getCandidateViewers(
       userId: view.user_id,
       user: userMap.get(view.user_id) || {
         userId: view.user_id,
-        email: '',
+        email: maskEmail(undefined),
         name: 'Unknown',
       },
       viewedAt: view.viewed_at,
@@ -364,7 +368,7 @@ export async function getCandidateViewers(
     return {
       candidate: {
         candidateId,
-        candidateName: student.full_name,
+        candidateName: candidateAlias,
         totalViews: total,
         uniqueViewers,
       },
@@ -406,6 +410,8 @@ export async function getUserViewStats(email: string): Promise<UserViewStats> {
     if (!user) {
       throw new NotFoundError('User')
     }
+
+    const maskedEmail = maskEmail(user.email)
 
     // 2. Get all views for this user
     const { data: views, error: viewsError } = await supabase
@@ -449,10 +455,10 @@ export async function getUserViewStats(email: string): Promise<UserViewStats> {
     return {
       user: {
         userId: user.user_id,
-        email: user.email,
+        email: maskedEmail,
         name: user.name,
         company: user.company || undefined,
-        phone: user.phone || undefined,
+        phone: user.phone ? maskPhone(user.phone) : undefined,
       },
       stats: {
         totalViews,

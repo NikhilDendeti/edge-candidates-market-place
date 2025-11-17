@@ -9,9 +9,10 @@ export interface StudentProfile {
   meta: string
   cgpa: string
   skills: string[]
+  gender?: string
   phone?: string
   email?: string
-  resumeUrl?: string
+  resumeUrl?: []
   college: {
     name: string
     branch: string
@@ -30,7 +31,7 @@ export interface StudentProfile {
   latestAssessment?: {
     assessmentId: string
     takenAt: string
-    reportUrl?: string
+    reportUrl?: []
     totalStudentScore: number
     totalAssessmentScore: number
     percent: number
@@ -39,7 +40,7 @@ export interface StudentProfile {
   latestInterview?: {
     interviewId: string
     interviewDate: string
-    recordingUrl?: string
+    recordingUrl?: []
     scores: InterviewScore[]
     overallRating: number
     overallLabel: 'Strong Hire' | 'Medium Fit' | 'Consider'
@@ -49,13 +50,13 @@ export interface StudentProfile {
     assessmentId: string
     takenAt: string
     percent: number
-    reportUrl?: string
+    reportUrl?: []
   }>
   allInterviews: Array<{
     interviewId: string
     interviewDate: string
     overallLabel: string
-    recordingUrl?: string
+    recordingUrl?: []
   }>
 }
 

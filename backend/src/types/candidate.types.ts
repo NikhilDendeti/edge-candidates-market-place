@@ -16,7 +16,7 @@ export interface Candidate {
   interviewMeta: string
   skills: string[]
   recommendation: CandidateRecommendation
-  resumeUrl?: string
+  resumeUrl?: []
 }
 
 export interface CandidateFilters {

@@ -5,6 +5,7 @@
 
 import { Candidate, CandidateRecommendation } from '../types/candidate.types.js'
 import { StudentProfile, AssessmentScore, InterviewScore } from '../types/student.types.js'
+import { getCandidateAlias, maskEmail, maskPhone, redactToEmptyArray } from './anonymizer.js'
 
 // Database types (matching Supabase schema)
 interface StudentRecord {
@@ -121,6 +122,7 @@ function deriveSkillsWithCommunication(
  * Transform student record to Candidate type
  */
 export function transformToCandidate(student: StudentRecord): Candidate {
+  const alias = getCandidateAlias(student.nxtwave_user_id)
   const latestAssessment = student.assessments?.[0]
   const latestInterview = student.interviews?.[0]
 
@@ -145,7 +147,7 @@ export function transformToCandidate(student: StudentRecord): Candidate {
 
   return {
     id: student.nxtwave_user_id,
-    name: student.full_name,
+    name: alias,
     college: student.colleges?.name || '',
     branch: student.colleges?.branch || '',
     cgpa: student.cgpa?.toFixed(2) || '0.00',
@@ -158,7 +160,7 @@ export function transformToCandidate(student: StudentRecord): Candidate {
       latestInterview?.communication_rating
     ),
     recommendation,
-    resumeUrl: student.resume_url || undefined,
+    resumeUrl: redactToEmptyArray(),
   }
 }
 
@@ -166,15 +168,17 @@ export function transformToCandidate(student: StudentRecord): Candidate {
  * Transform student record to StudentProfile type
  */
 export function transformToStudentProfile(student: StudentRecord): StudentProfile {
+  const alias = getCandidateAlias(student.nxtwave_user_id)
   const latestAssessment = student.assessments?.[0]
   const latestInterview = student.interviews?.[0]
+  const maskedEmail = student.email ? maskEmail(student.email) : undefined
+  const maskedPhone = student.phone ? maskPhone(student.phone) : undefined
 
   // Calculate initials
-  const initials = student.full_name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
+  const initials = alias
+    .replace(/[^a-z0-9]/gi, '')
     .slice(0, 2)
+    .padEnd(2, 'X')
     .toUpperCase()
 
   // Build meta string
@@ -263,7 +267,7 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     assessmentId: a.assessment_id,
     takenAt: a.taken_at,
     percent: a.percent || 0,
-    reportUrl: a.report_url,
+    reportUrl: redactToEmptyArray(),
   })) || []
 
   // All interviews
@@ -271,12 +275,12 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     interviewId: i.interview_id,
     interviewDate: i.interview_date,
     overallLabel: i.overall_label || 'Consider',
-    recordingUrl: i.recording_url,
+    recordingUrl: redactToEmptyArray(),
   })) || []
 
   return {
     id: student.nxtwave_user_id,
-    name: student.full_name,
+    name: alias,
     initials,
     meta,
     cgpa,
@@ -284,9 +288,10 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
       latestAssessment?.assessment_scores,
       latestInterview?.communication_rating
     ),
-    phone: student.phone,
-    email: student.email,
-    resumeUrl: student.resume_url,
+    gender: student.gender,
+    phone: maskedPhone,
+    email: maskedEmail,
+    resumeUrl: redactToEmptyArray(),
     college: {
       name: student.colleges?.name || '',
       branch: student.colleges?.branch || '',
@@ -299,7 +304,7 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     latestAssessment: latestAssessment ? {
       assessmentId: latestAssessment.assessment_id,
       takenAt: latestAssessment.taken_at,
-      reportUrl: latestAssessment.report_url,
+      reportUrl: redactToEmptyArray(),
       totalStudentScore: latestAssessment.total_student_score || 0,
       totalAssessmentScore: latestAssessment.total_assessment_score || 0,
       percent: latestAssessment.percent || 0,
@@ -308,7 +313,7 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     latestInterview: latestInterview ? {
       interviewId: latestInterview.interview_id,
       interviewDate: latestInterview.interview_date,
-      recordingUrl: latestInterview.recording_url,
+      recordingUrl: redactToEmptyArray(),
       scores: interviewScores,
       overallRating: latestInterview.overall_interview_rating || 0,
       overallLabel: latestInterview.overall_label || 'Consider',

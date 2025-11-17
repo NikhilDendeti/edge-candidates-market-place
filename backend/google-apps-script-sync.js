@@ -38,6 +38,30 @@ const CFG = {
   ]
 };
 
+/**
+ * Partial NIRF 2025 Engineering data (city/state/rank) sourced from
+ * https://www.nirfindia.org/Rankings/2025/EngineeringRanking.html
+ * Keys are normalized to lowercase for easier matching.
+ */
+const NIRF_DATA = {
+  'Indian Institute of Information Technology Bhopal': {
+    city: 'Bhopal',
+    state: 'Madhya Pradesh',
+    nirfRanking: 77,
+  },
+  'Indian Institute of Information Technology Dharwad': {
+    city: 'Dharwad',
+    state: 'Karnataka',
+    nirfRanking: 'Not released',
+  },
+  'Indian Institute of Information Technology Bhagalpur': {
+    city: 'Bhagalpur',
+    state: 'Bihar',
+    nirfRanking: 'Not released',
+  }
+};
+
+
 function onEditSync(e) {
   try {
     if (!e || !e.range) return;
@@ -85,6 +109,7 @@ function syncRow_(sheet, row) {
   // REQUIRED: college_name, college_degree, branch
   // OPTIONAL: city, state, country, nirf_ranking (will be null if missing)
   const collegePayload = pick_(rec, CFG.COLLEGE_FIELDS);
+  enrichCollegeFromNIRF_(collegePayload);
   let collegeId = null;
   
   if (collegePayload.college_name && collegePayload.college_degree && collegePayload.branch) {
@@ -579,6 +604,50 @@ function pick_(obj, keys) {
   const out = {};
   keys.forEach(k => { if (k in obj) out[k] = obj[k]; });
   return out;
+}
+
+function enrichCollegeFromNIRF_(collegePayload) {
+  if (!collegePayload || !collegePayload.college_name) return;
+
+  const nirfData = getNIRFData_(collegePayload.college_name);
+  if (!nirfData) return;
+
+  let enriched = false;
+
+  if (!collegePayload.college_city && !collegePayload.city && nirfData.city) {
+    collegePayload.college_city = nirfData.city;
+    collegePayload.city = nirfData.city;
+    enriched = true;
+  }
+
+  if (!collegePayload.college_state && !collegePayload.state && nirfData.state) {
+    collegePayload.college_state = nirfData.state;
+    collegePayload.state = nirfData.state;
+    enriched = true;
+  }
+
+  if (!collegePayload.nirf_ranking && nirfData.nirfRanking) {
+    collegePayload.nirf_ranking = nirfData.nirfRanking;
+    enriched = true;
+  }
+
+  if (enriched) {
+    console.log('Enriched college metadata from NIRF for', collegePayload.college_name);
+  }
+}
+
+function getNIRFData_(collegeName) {
+  if (!collegeName) return null;
+  const key = normalizeCollegeKey_(collegeName);
+  return NIRF_DATA[key] || null;
+}
+
+function normalizeCollegeKey_(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9&()\s.-]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function hasAnyValue_(obj) {
