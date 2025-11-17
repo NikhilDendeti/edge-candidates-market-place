@@ -194,7 +194,7 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     : { percentage: 0, raw: '0 / 0' }
 
   // Interview overall
-  const interviewOverall = latestInterview && latestInterview.overall_interview_rating !== null
+  const interviewOverall = latestInterview && latestInterview.overall_interview_rating !== null && latestInterview.overall_interview_rating !== undefined
     ? {
         percentage: Math.round(latestInterview.overall_interview_rating * 10),
         raw: `${latestInterview.overall_interview_rating} / 10`,
@@ -202,19 +202,26 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     : { percentage: 0, raw: '0 / 10' }
 
   // Transform assessment scores
-  const assessmentScores: AssessmentScore[] = latestAssessment?.assessment_scores?.map((as) => {
-    const percentage = (as.score / as.max_score) * 100
-    return {
-      type: as.score_types?.key || '',
-      label: as.score_types?.display_name || '',
-      score: as.score,
-      maxScore: as.max_score,
-      percentage: Math.round(percentage),
-      rating: calculateRating(as.score, as.max_score),
-    }
-  }) || []
+  const assessmentScores: AssessmentScore[] = []
+  if (latestAssessment?.assessment_scores && Array.isArray(latestAssessment.assessment_scores)) {
+    latestAssessment.assessment_scores.forEach((as: any) => {
+      // Only include if score_types relation exists
+      if (as.score_types) {
+        const percentage = (as.score / as.max_score) * 100
+        assessmentScores.push({
+          type: as.score_types.key || '',
+          label: as.score_types.display_name || '',
+          score: as.score,
+          maxScore: as.max_score,
+          percentage: Math.round(percentage),
+          rating: calculateRating(as.score, as.max_score),
+        })
+      }
+    })
+  }
 
   // Transform interview scores
+  // Include scores even if they are 0 (but exclude if null/undefined)
   const interviewScores: InterviewScore[] = []
   if (latestInterview) {
     if (latestInterview.self_intro_rating !== null && latestInterview.self_intro_rating !== undefined) {

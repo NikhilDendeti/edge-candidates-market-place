@@ -59,6 +59,26 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
         const dateB = new Date(b.taken_at).getTime()
         return dateB - dateA // Descending order (latest first)
       })
+
+      // Fetch assessment_scores separately if not loaded or empty
+      // This handles cases where nested relations don't load properly
+      for (const assessment of students.assessments) {
+        if (!assessment.assessment_scores || assessment.assessment_scores.length === 0) {
+          const { data: scores, error: scoresError } = await supabase
+            .from('assessment_scores')
+            .select(`
+              *,
+              score_types (*)
+            `)
+            .eq('assessment_id', assessment.assessment_id)
+
+          if (!scoresError && scores) {
+            assessment.assessment_scores = scores
+          } else {
+            assessment.assessment_scores = []
+          }
+        }
+      }
     }
 
     if (students.interviews && Array.isArray(students.interviews)) {
