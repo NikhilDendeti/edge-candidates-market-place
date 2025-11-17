@@ -2,19 +2,19 @@
   "name": "edge-candidates-api",
   "version": "1.0.0",
   "description": "Backend API for Edge Candidates Marketplace",
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node src/index.js",
     "type-check": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@supabase/supabase-js": "^2.81.1",
+    "@supabase/supabase-js": "^2.81.1", 
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.1",
