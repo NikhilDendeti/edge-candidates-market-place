@@ -1,0 +1,18 @@
+/**
+ * Students controller
+ */
+import { getStudentProfile } from '../services/studentService.js';
+import { validateStudentId } from '../utils/validators.js';
+export async function getStudent(req, res, next) {
+    try {
+        const studentId = validateStudentId(req.params.id);
+        const profile = await getStudentProfile(studentId);
+        // Explicitly set 200 status code
+        res.status(200).json(profile);
+        return;
+    }
+    catch (error) {
+        next(error);
+    }
+}
+//# sourceMappingURL=studentsController.js.map

@@ -3,12 +3,12 @@
  */
 import express from 'express';
 import cors from 'cors';
-import { env } from '../dist/config/env.js';
-import { errorHandler } from '../dist/middleware/errorHandler.js';
-import candidateRoutes from '../dist/routes/candidates.js';
-import studentRoutes from '../dist/routes/students.js';
-import statsRoutes from '../dist/routes/stats.js';
-import userRoutes from '../dist/routes/users.js';
+import { env } from './config/env.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import candidateRoutes from './routes/candidates.js';
+import studentRoutes from './routes/students.js';
+import statsRoutes from './routes/stats.js';
+import userRoutes from './routes/users.js';
 const app = express();
 // Middleware
 // CORS configuration - support multiple origins for frontend on different machines

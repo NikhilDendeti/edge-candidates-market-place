@@ -2,12 +2,12 @@
   "name": "edge-candidates-api",
   "version": "1.0.0",
   "description": "Backend API for Edge Candidates Marketplace",
-  "main": "src/index.js",
+  "main": "dist2/index.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch dist2/index.js",
     "build": "tsc",
-    "start": "node src/index.js",
+    "start": "node dist2/index.js",
     "type-check": "tsc --noEmit"
   },
   "keywords": [],

@@ -1,0 +1,6 @@
+/**
+ * Statistics routes
+ */
+declare const router: import("express-serve-static-core").Router;
+export default router;
+//# sourceMappingURL=stats.d.ts.map

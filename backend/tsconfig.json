@@ -6,7 +6,7 @@
     "moduleResolution": "bundler",
     "types": ["node"],
     "rootDir": "./src",
-    "outDir": "./dist",
+    "outDir": "dist2",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -20,7 +20,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "dist2/index.js"],
+  "exclude": ["node_modules", "dist2"]
 }
 
