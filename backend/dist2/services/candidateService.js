@@ -4,7 +4,7 @@
  */
 import { supabase } from '../config/supabase.js';
 import { DatabaseError } from '../utils/errors.js';
-import { transformToCandidate } from '../utils/transformers.js';
+import { transformToCandidate, normalizeBranchName } from '../utils/transformers.js';
 /**
  * Get candidates list with filters and pagination
  */
@@ -65,6 +65,23 @@ export async function getCandidates(filters) {
                 verdictCounts.Low++;
             }
         });
+        // Calculate branch mix BEFORE applying verdict filter (but after search filter)
+        const branchCounts = {};
+        candidates.forEach((candidate) => {
+            if (candidate.branch) {
+                const normalized = normalizeBranchName(candidate.branch);
+                branchCounts[normalized] = (branchCounts[normalized] || 0) + 1;
+            }
+        });
+        // Convert to array and calculate percentages
+        const totalCandidates = candidates.length || 1;
+        const branchMix = Object.entries(branchCounts)
+            .map(([label, count]) => ({
+            label,
+            count,
+            percent: Math.round((count / totalCandidates) * 100),
+        }))
+            .sort((a, b) => b.count - a.count); // Sort by count descending
         // Apply assessment/interview sorting if needed (post-query)
         if (filters.sort === 'assessment_avg') {
             candidates.sort((a, b) => {
@@ -107,6 +124,7 @@ export async function getCandidates(filters) {
                 totalPages,
             },
             verdictCounts,
+            branchMix,
         };
     }
     catch (error) {

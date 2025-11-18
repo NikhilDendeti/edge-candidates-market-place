@@ -6,8 +6,14 @@
 import { supabase } from '../config/supabase.js'
 import { DatabaseError } from '../utils/errors.js'
 import { Candidate, CandidateFilters } from '../types/candidate.types.js'
-import { transformToCandidate } from '../utils/transformers.js'
+import { transformToCandidate, normalizeBranchName } from '../utils/transformers.js'
 import { PaginationMeta } from '../types/api.types.js'
+
+export interface BranchMixItem {
+  label: string
+  percent: number
+  count: number
+}
 
 export interface CandidateListResult {
   data: Candidate[]
@@ -17,6 +23,7 @@ export interface CandidateListResult {
     Medium: number
     Low: number
   }
+  branchMix: BranchMixItem[]
 }
 
 /**
@@ -82,6 +89,26 @@ export async function getCandidates(filters: CandidateFilters): Promise<Candidat
       }
     })
 
+    // Calculate branch mix BEFORE applying verdict filter (but after search filter)
+    const branchCounts: Record<string, number> = {}
+    
+    candidates.forEach((candidate) => {
+      if (candidate.branch) {
+        const normalized = normalizeBranchName(candidate.branch)
+        branchCounts[normalized] = (branchCounts[normalized] || 0) + 1
+      }
+    })
+
+    // Convert to array and calculate percentages
+    const totalCandidates = candidates.length || 1
+    const branchMix: BranchMixItem[] = Object.entries(branchCounts)
+      .map(([label, count]) => ({
+        label,
+        count,
+        percent: Math.round((count / totalCandidates) * 100),
+      }))
+      .sort((a, b) => b.count - a.count) // Sort by count descending
+
     // Apply assessment/interview sorting if needed (post-query)
     if (filters.sort === 'assessment_avg') {
       candidates.sort((a, b) => {
@@ -127,6 +154,7 @@ export async function getCandidates(filters: CandidateFilters): Promise<Candidat
         totalPages,
       },
       verdictCounts,
+      branchMix,
     }
   } catch (error: any) {
     throw new DatabaseError('Failed to fetch candidates', error)
