@@ -7,6 +7,11 @@ import { PaginationMeta } from '../types/api.types.js';
 export interface CandidateListResult {
     data: Candidate[];
     pagination: PaginationMeta;
+    verdictCounts: {
+        Strong: number;
+        Medium: number;
+        Low: number;
+    };
 }
 /**
  * Get candidates list with filters and pagination

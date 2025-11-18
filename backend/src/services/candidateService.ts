@@ -12,6 +12,11 @@ import { PaginationMeta } from '../types/api.types.js'
 export interface CandidateListResult {
   data: Candidate[]
   pagination: PaginationMeta
+  verdictCounts: {
+    Strong: number
+    Medium: number
+    Low: number
+  }
 }
 
 /**
@@ -60,6 +65,23 @@ export async function getCandidates(filters: CandidateFilters): Promise<Candidat
     // Transform data
     let candidates = (data || []).map(transformToCandidate)
 
+    // Calculate verdict counts BEFORE applying verdict filter (but after search filter)
+    const verdictCounts = {
+      Strong: 0,
+      Medium: 0,
+      Low: 0,
+    }
+    
+    candidates.forEach((candidate) => {
+      if (candidate.recommendation === 'Strong Hire') {
+        verdictCounts.Strong++
+      } else if (candidate.recommendation === 'Medium Fit') {
+        verdictCounts.Medium++
+      } else if (candidate.recommendation === 'Consider') {
+        verdictCounts.Low++
+      }
+    })
+
     // Apply assessment/interview sorting if needed (post-query)
     if (filters.sort === 'assessment_avg') {
       candidates.sort((a, b) => {
@@ -104,6 +126,7 @@ export async function getCandidates(filters: CandidateFilters): Promise<Candidat
         total: totalAfterFilter,
         totalPages,
       },
+      verdictCounts,
     }
   } catch (error: any) {
     throw new DatabaseError('Failed to fetch candidates', error)
