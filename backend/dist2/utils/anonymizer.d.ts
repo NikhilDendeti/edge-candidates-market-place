@@ -3,7 +3,7 @@
  */
 export type RedactedArray = [];
 /**
- * Generate deterministic candidate alias like "candidate-12345"
+ * Generate deterministic candidate alias like "NE Can-01" (2 digits, 01-99)
  */
 export declare function getCandidateAlias(id: string): string;
 /**

@@ -2,7 +2,7 @@
  * Data anonymization helpers
  */
 const DEFAULT_DOMAIN_MASK = '**';
-const MAX_ALIAS_MOD = 100000;
+const MAX_ALIAS_MOD = 99; // Limit to 2 digits (1-99)
 function stableHash(input) {
     let hash = 0;
     for (let i = 0; i < input.length; i += 1) {
@@ -12,13 +12,15 @@ function stableHash(input) {
     return Math.abs(hash);
 }
 /**
- * Generate deterministic candidate alias like "candidate-12345"
+ * Generate deterministic candidate alias like "NE Can-01" (2 digits, 01-99)
  */
 export function getCandidateAlias(id) {
     const normalized = id || 'unknown';
     const hash = stableHash(normalized);
-    const aliasNumber = (hash % MAX_ALIAS_MOD) + 1;
-    return `candidate-${aliasNumber}`;
+    const aliasNumber = (hash % MAX_ALIAS_MOD) + 1; // 1-99
+    // Pad with leading zero to always show 2 digits
+    const paddedNumber = aliasNumber.toString().padStart(2, '0');
+    return `NE Can-${paddedNumber}`;
 }
 /**
  * Mask email into pattern like "as************9@**.**"

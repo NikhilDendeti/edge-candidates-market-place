@@ -67,7 +67,10 @@ export async function getCandidates(filters: CandidateFilters): Promise<Candidat
     // Execute query - fetch all matching records
     const { data, error } = await query
 
-    if (error) throw error
+    if (error) {
+      console.error('Database query error:', error)
+      throw error
+    }
 
     // Transform data
     let candidates = (data || []).map(transformToCandidate)
@@ -112,16 +115,20 @@ export async function getCandidates(filters: CandidateFilters): Promise<Candidat
     // Apply assessment/interview sorting if needed (post-query)
     if (filters.sort === 'assessment_avg') {
       candidates.sort((a, b) => {
-        // Extract numeric score from "XXX / YYY" format
-        const aScore = parseFloat(a.assessmentScore.split(' / ')[0]) || 0
-        const bScore = parseFloat(b.assessmentScore.split(' / ')[0]) || 0
+        // Extract numeric score from "XXX / YYY" format, handle "N/A" case
+        const aScoreStr = a.assessmentScore === 'N/A' ? '0' : a.assessmentScore.split(' / ')[0]
+        const bScoreStr = b.assessmentScore === 'N/A' ? '0' : b.assessmentScore.split(' / ')[0]
+        const aScore = parseFloat(aScoreStr) || 0
+        const bScore = parseFloat(bScoreStr) || 0
         return filters.order === 'asc' ? aScore - bScore : bScore - aScore
       })
     } else if (filters.sort === 'interview_avg') {
       candidates.sort((a, b) => {
-        // Extract numeric rating from "X.X / 10" format
-        const aRating = parseFloat(a.interviewScore.split(' / ')[0]) || 0
-        const bRating = parseFloat(b.interviewScore.split(' / ')[0]) || 0
+        // Extract numeric rating from "XX / 100" or "X.X / 10" format, handle "N/A" case
+        const aRatingStr = a.interviewScore === 'N/A' ? '0' : a.interviewScore.split(' / ')[0]
+        const bRatingStr = b.interviewScore === 'N/A' ? '0' : b.interviewScore.split(' / ')[0]
+        const aRating = parseFloat(aRatingStr) || 0
+        const bRating = parseFloat(bRatingStr) || 0
         return filters.order === 'asc' ? aRating - bRating : bRating - aRating
       })
     }

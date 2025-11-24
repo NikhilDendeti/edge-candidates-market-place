@@ -43,9 +43,16 @@ interface StudentRecord {
         recording_url?: string;
         self_intro_rating?: number;
         problem_solving_rating?: number;
+        problem1_solving_rating?: number;
+        problem1_solving_rating_code?: string;
+        problem2_solving_rating?: number;
+        problem2_solving_rating_code?: string;
         communication_rating?: number;
         conceptual_rating?: number;
+        DSA_Theory?: number;
+        Core_CS_Theory?: number;
         overall_interview_rating?: number;
+        overall_interview_score_out_of_100?: number;
         overall_label?: 'Strong Hire' | 'Medium Fit' | 'Consider';
         notes?: string;
     }>;

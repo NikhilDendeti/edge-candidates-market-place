@@ -46,10 +46,17 @@ interface StudentRecord {
     interview_date: string
     recording_url?: string
     self_intro_rating?: number
-    problem_solving_rating?: number
+    problem_solving_rating?: number // DEPRECATED: Use problem1_solving_rating and problem2_solving_rating
+    problem1_solving_rating?: number
+    problem1_solving_rating_code?: string
+    problem2_solving_rating?: number
+    problem2_solving_rating_code?: string
     communication_rating?: number
-    conceptual_rating?: number
-    overall_interview_rating?: number
+    conceptual_rating?: number // DEPRECATED: Use DSA_Theory and Core_CS_Theory
+    DSA_Theory?: number
+    Core_CS_Theory?: number
+    overall_interview_rating?: number // DEPRECATED: Use overall_interview_score_out_of_100
+    overall_interview_score_out_of_100?: number
     overall_label?: 'Strong Hire' | 'Medium Fit' | 'Consider'
     notes?: string
   }>
@@ -111,7 +118,8 @@ function deriveSkillsWithCommunication(
 ): string[] {
   const skills = deriveSkills(assessmentScores)
   
-  if (communicationRating && communicationRating >= 8) {
+  // Communication rating is now out of 5, so threshold is 4 (80% of 5)
+  if (communicationRating && communicationRating >= 4) {
     skills.push('Strong Communication')
   }
 
@@ -137,8 +145,13 @@ export function transformToCandidate(student: StudentRecord): Candidate {
   // Format interview score
   let interviewScore = 'N/A'
   let interviewMeta = 'Not recorded'
-  if (latestInterview && latestInterview.overall_interview_rating !== null && latestInterview.overall_interview_rating !== undefined) {
-    interviewScore = `${latestInterview.overall_interview_rating} / 10`
+  if (latestInterview) {
+    // Use new overall_interview_score_out_of_100 if available, fallback to old field
+    if (latestInterview.overall_interview_score_out_of_100 !== null && latestInterview.overall_interview_score_out_of_100 !== undefined) {
+      interviewScore = `${latestInterview.overall_interview_score_out_of_100} / 100`
+    } else if (latestInterview.overall_interview_rating !== null && latestInterview.overall_interview_rating !== undefined) {
+      interviewScore = `${latestInterview.overall_interview_rating} / 10`
+    }
     interviewMeta = latestInterview.recording_url ? 'Recorded' : 'Not recorded'
   }
 
@@ -198,12 +211,21 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     : { percentage: 0, raw: '0 / 0' }
 
   // Interview overall
-  const interviewOverall = latestInterview && latestInterview.overall_interview_rating !== null && latestInterview.overall_interview_rating !== undefined
-    ? {
+  let interviewOverall = { percentage: 0, raw: '0 / 100' }
+  if (latestInterview) {
+    // Use new overall_interview_score_out_of_100 if available, fallback to old field
+    if (latestInterview.overall_interview_score_out_of_100 !== null && latestInterview.overall_interview_score_out_of_100 !== undefined) {
+      interviewOverall = {
+        percentage: Math.round(latestInterview.overall_interview_score_out_of_100),
+        raw: `${latestInterview.overall_interview_score_out_of_100} / 100`,
+      }
+    } else if (latestInterview.overall_interview_rating !== null && latestInterview.overall_interview_rating !== undefined) {
+      interviewOverall = {
         percentage: Math.round(latestInterview.overall_interview_rating * 10),
         raw: `${latestInterview.overall_interview_rating} / 10`,
       }
-    : { percentage: 0, raw: '0 / 10' }
+    }
+  }
 
   // Transform assessment scores
   const assessmentScores: AssessmentScore[] = []
@@ -228,6 +250,7 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
   // Include scores even if they are 0 (but exclude if null/undefined)
   const interviewScores: InterviewScore[] = []
   if (latestInterview) {
+    // Self Introduction (out of 5)
     if (latestInterview.self_intro_rating !== null && latestInterview.self_intro_rating !== undefined) {
       interviewScores.push({
         criteria: 'Self Introduction',
@@ -236,7 +259,30 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
         rating: calculateRating(latestInterview.self_intro_rating, 5),
       })
     }
-    if (latestInterview.problem_solving_rating !== null && latestInterview.problem_solving_rating !== undefined) {
+    
+    // Problem 1 Solving (out of 5) - NEW
+    if (latestInterview.problem1_solving_rating !== null && latestInterview.problem1_solving_rating !== undefined) {
+      interviewScores.push({
+        criteria: 'Problem 1 Solving',
+        score: latestInterview.problem1_solving_rating,
+        max: 5,
+        rating: calculateRating(latestInterview.problem1_solving_rating, 5),
+      })
+    }
+    
+    // Problem 2 Solving (out of 5) - NEW
+    if (latestInterview.problem2_solving_rating !== null && latestInterview.problem2_solving_rating !== undefined) {
+      interviewScores.push({
+        criteria: 'Problem 2 Solving',
+        score: latestInterview.problem2_solving_rating,
+        max: 5,
+        rating: calculateRating(latestInterview.problem2_solving_rating, 5),
+      })
+    }
+    
+    // Fallback to old problem_solving_rating if new fields not available
+    if (interviewScores.filter(s => s.criteria.includes('Problem')).length === 0 &&
+        latestInterview.problem_solving_rating !== null && latestInterview.problem_solving_rating !== undefined) {
       interviewScores.push({
         criteria: 'Problem Solving & Coding',
         score: latestInterview.problem_solving_rating,
@@ -244,15 +290,40 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
         rating: calculateRating(latestInterview.problem_solving_rating, 35),
       })
     }
+    
+    // Communication Skills (out of 5) - Updated from 9 to 5
     if (latestInterview.communication_rating !== null && latestInterview.communication_rating !== undefined) {
       interviewScores.push({
         criteria: 'Communication Skills',
         score: latestInterview.communication_rating,
-        max: 9,
-        rating: calculateRating(latestInterview.communication_rating, 9),
+        max: 5,
+        rating: calculateRating(latestInterview.communication_rating, 5),
       })
     }
-    if (latestInterview.conceptual_rating !== null && latestInterview.conceptual_rating !== undefined) {
+    
+    // DSA Theory (out of 5) - NEW
+    if (latestInterview.DSA_Theory !== null && latestInterview.DSA_Theory !== undefined) {
+      interviewScores.push({
+        criteria: 'DSA Theory',
+        score: latestInterview.DSA_Theory,
+        max: 5,
+        rating: calculateRating(latestInterview.DSA_Theory, 5),
+      })
+    }
+    
+    // Core CS Theory (out of 5) - NEW
+    if (latestInterview.Core_CS_Theory !== null && latestInterview.Core_CS_Theory !== undefined) {
+      interviewScores.push({
+        criteria: 'Core CS Theory',
+        score: latestInterview.Core_CS_Theory,
+        max: 5,
+        rating: calculateRating(latestInterview.Core_CS_Theory, 5),
+      })
+    }
+    
+    // Fallback to old conceptual_rating if new fields not available
+    if (interviewScores.filter(s => s.criteria.includes('Theory') || s.criteria.includes('Conceptual')).length === 0 &&
+        latestInterview.conceptual_rating !== null && latestInterview.conceptual_rating !== undefined) {
       interviewScores.push({
         criteria: 'Conceptual & Theoretical',
         score: latestInterview.conceptual_rating,
@@ -315,9 +386,18 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
       interviewDate: latestInterview.interview_date,
       recordingUrl: redactToEmptyArray(),
       scores: interviewScores,
-      overallRating: latestInterview.overall_interview_rating || 0,
+      overallRating: latestInterview.overall_interview_score_out_of_100 !== null && latestInterview.overall_interview_score_out_of_100 !== undefined
+        ? latestInterview.overall_interview_score_out_of_100
+        : (latestInterview.overall_interview_rating || 0),
       overallLabel: latestInterview.overall_label || 'Consider',
       notes: latestInterview.notes,
+      problem1_solving_rating: latestInterview.problem1_solving_rating,
+      problem1_solving_rating_code: latestInterview.problem1_solving_rating_code,
+      problem2_solving_rating: latestInterview.problem2_solving_rating,
+      problem2_solving_rating_code: latestInterview.problem2_solving_rating_code,
+      DSA_Theory: latestInterview.DSA_Theory,
+      Core_CS_Theory: latestInterview.Core_CS_Theory,
+      overall_interview_score_out_of_100: latestInterview.overall_interview_score_out_of_100,
     } : undefined,
     allAssessments,
     allInterviews,

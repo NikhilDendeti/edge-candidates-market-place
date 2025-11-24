@@ -44,6 +44,13 @@ export interface StudentProfile {
         overallRating: number;
         overallLabel: 'Strong Hire' | 'Medium Fit' | 'Consider';
         notes?: string;
+        problem1_solving_rating?: number;
+        problem1_solving_rating_code?: string;
+        problem2_solving_rating?: number;
+        problem2_solving_rating_code?: string;
+        DSA_Theory?: number;
+        Core_CS_Theory?: number;
+        overall_interview_score_out_of_100?: number;
     };
     allAssessments: Array<{
         assessmentId: string;

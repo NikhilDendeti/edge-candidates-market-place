@@ -200,13 +200,13 @@ GET /api/candidates?page=1&limit=20&search=john&verdict=Strong&sort=assessment_a
   "data": [
     {
       "id": "3c6e6834-cffb-4a17-845d-905d94f05f50",
-      "name": "John Doe",
+      "name": "NE Can-1",
       "college": "IIIT Hyderabad",
       "branch": "Computer Science",
       "cgpa": "9.41",
       "assessmentScore": "188 / 210",
       "assessmentMeta": "Last taken: 12 Oct",
-      "interviewScore": "9.6 / 10",
+      "interviewScore": "96 / 100",
       "interviewMeta": "Recorded",
       "skills": [
         "Strong Problem Solving",
@@ -218,13 +218,13 @@ GET /api/candidates?page=1&limit=20&search=john&verdict=Strong&sort=assessment_a
     },
     {
       "id": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-      "name": "Jane Smith",
+      "name": "NE Can-2",
       "college": "IIIT Bangalore",
       "branch": "Information Technology",
       "cgpa": "9.18",
       "assessmentScore": "178 / 210",
       "assessmentMeta": "Last taken: 10 Oct",
-      "interviewScore": "8.7 / 10",
+      "interviewScore": "87 / 100",
       "interviewMeta": "Recorded",
       "skills": [
         "Strong Problem Solving",
@@ -253,7 +253,7 @@ GET /api/candidates?page=1&limit=20&search=john&verdict=Strong&sort=assessment_a
   - `cgpa` (string): CGPA formatted as "X.XX"
   - `assessmentScore` (string): Latest assessment score formatted as "XXX / XXX"
   - `assessmentMeta` (string): Assessment metadata (e.g., "Last taken: 12 Oct")
-  - `interviewScore` (string): Latest interview rating formatted as "X.X / 10"
+  - `interviewScore` (string): Latest interview rating formatted as "XX / 100" (or "X.X / 10" for backward compatibility)
   - `interviewMeta` (string): Interview metadata (e.g., "Recorded" or date)
   - `skills` (array): Array of skill strings derived from assessment scores
   - `recommendation` (enum): Verdict: `"Strong Hire"`, `"Medium Fit"`, or `"Consider"`
@@ -312,8 +312,8 @@ GET /api/students/{id}
 ```json
 {
   "id": "3c6e6834-cffb-4a17-845d-905d94f05f50",
-  "name": "John Doe",
-  "initials": "JD",
+  "name": "NE Can-1",
+  "initials": "NE",
   "meta": "IIIT Hyderabad (NIRF: 1) • Computer Science • Class of 2026",
   "cgpa": "9.41 / 10.0",
   "skills": [
@@ -338,7 +338,7 @@ GET /api/students/{id}
   },
   "interviewOverall": {
     "percentage": 96,
-    "raw": "9.6 / 10"
+    "raw": "96 / 100"
   },
   "latestAssessment": {
     "assessmentId": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
@@ -394,27 +394,46 @@ GET /api/students/{id}
         "rating": "Excellent"
       },
       {
-        "criteria": "Problem Solving & Coding",
-        "score": 35,
-        "max": 35,
+        "criteria": "Problem 1 Solving",
+        "score": 4.5,
+        "max": 5,
+        "rating": "Excellent"
+      },
+      {
+        "criteria": "Problem 2 Solving",
+        "score": 4,
+        "max": 5,
         "rating": "Excellent"
       },
       {
         "criteria": "Communication Skills",
-        "score": 9,
-        "max": 9,
+        "score": 4.5,
+        "max": 5,
         "rating": "Excellent"
       },
       {
-        "criteria": "Conceptual & Theoretical",
-        "score": 6,
-        "max": 6,
+        "criteria": "DSA Theory",
+        "score": 4,
+        "max": 5,
+        "rating": "Excellent"
+      },
+      {
+        "criteria": "Core CS Theory",
+        "score": 4.5,
+        "max": 5,
         "rating": "Excellent"
       }
     ],
-    "overallRating": 9.6,
+    "overallRating": 96,
     "overallLabel": "Strong Hire",
-    "notes": "Excellent candidate with strong problem-solving skills."
+    "notes": "Excellent candidate with strong problem-solving skills.",
+    "problem1_solving_rating": 4.5,
+    "problem1_solving_rating_code": "LEETCODE-123",
+    "problem2_solving_rating": 4,
+    "problem2_solving_rating_code": "LEETCODE-456",
+    "DSA_Theory": 4,
+    "Core_CS_Theory": 4.5,
+    "overall_interview_score_out_of_100": 96
   },
   "allAssessments": [
     {
@@ -467,8 +486,8 @@ GET /api/students/{id}
   - `percentage` (number): Percentage score
   - `raw` (string): Raw score formatted as "XXX / XXX"
 - `interviewOverall` (object):
-  - `percentage` (number): Percentage score (rating × 10)
-  - `raw` (string): Raw rating formatted as "X.X / 10"
+  - `percentage` (number): Percentage score (0-100)
+  - `raw` (string): Raw score formatted as "XX / 100" (or "X.X / 10" for backward compatibility)
 
 **Latest Assessment** (object | null):
 - `assessmentId` (string, UUID): Assessment ID
@@ -490,13 +509,20 @@ GET /api/students/{id}
 - `interviewDate` (string, ISO 8601): Interview date
 - `recordingUrl` (string | null): Recording URL
 - `scores` (array): Array of interview scores
-  - `criteria` (string): Criteria name
+  - `criteria` (string): Criteria name (e.g., "Self Introduction", "Problem 1 Solving", "Problem 2 Solving", "Communication Skills", "DSA Theory", "Core CS Theory")
   - `score` (number): Actual score
-  - `max` (number): Maximum score
-  - `rating` (string): Rating
-- `overallRating` (number): Overall interview rating (0-10)
+  - `max` (number): Maximum score (all new fields are out of 5)
+  - `rating` (string): Rating ("Excellent", "Good", "Fair", "Poor")
+- `overallRating` (number): Overall interview rating (0-100 for new format, 0-10 for backward compatibility)
 - `overallLabel` (enum): Verdict ("Strong Hire", "Medium Fit", "Consider")
 - `notes` (string | null): Interview notes
+- `problem1_solving_rating` (number, optional): Problem 1 solving rating (0-5 scale)
+- `problem1_solving_rating_code` (string, optional): Problem 1 code/reference identifier
+- `problem2_solving_rating` (number, optional): Problem 2 solving rating (0-5 scale)
+- `problem2_solving_rating_code` (string, optional): Problem 2 code/reference identifier
+- `DSA_Theory` (number, optional): DSA Theory rating (0-5 scale)
+- `Core_CS_Theory` (number, optional): Core CS Theory rating (0-5 scale)
+- `overall_interview_score_out_of_100` (number, optional): Overall interview score (0-100 scale)
 
 **All Assessments** (array):
 - Array of assessment summaries (same structure as in `latestAssessment` but without `scores`)
@@ -633,7 +659,7 @@ GET /api/users/{email}/candidates?page=1&limit=20&sort=viewed_at&order=desc
     {
       "viewId": "v1v2v3v4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
       "candidateId": "3c6e6834-cffb-4a17-845d-905d94f05f50",
-      "candidateName": "John Doe",
+      "candidateName": "NE Can-1",
       "viewedAt": "2024-11-15T10:30:00+05:30",
       "candidate": {
         "cgpa": "9.41",
@@ -714,7 +740,7 @@ GET /api/candidates/{id}/viewers?page=1&limit=20&sort=viewed_at&order=desc
 {
   "candidate": {
     "candidateId": "3c6e6834-cffb-4a17-845d-905d94f05f50",
-    "candidateName": "John Doe",
+    "candidateName": "NE Can-1",
     "totalViews": 5,
     "uniqueViewers": 3
   },
@@ -972,7 +998,7 @@ Ratings are calculated based on score percentages:
    - Coding score ≥ 70% → "Strong Problem Solving"
    - DSA score ≥ 70% → "Strong DSA"
    - CS Fundamentals score ≥ 70% → "Strong Theory"
-   - Communication rating ≥ 8 → "Strong Communication"
+   - Communication rating ≥ 4 (out of 5) → "Strong Communication"
 
 2. **Branch Normalization**: Branch names are normalized for consistency:
    - "Computer Science", "CSE", "CS" → "CSE"
@@ -987,6 +1013,12 @@ Ratings are calculated based on score percentages:
 4. **Pagination**: Pagination is applied after filtering and sorting. The `total` field reflects the count after all filters are applied.
 
 5. **Empty Results**: If no candidates match the filters, an empty array is returned with `total: 0`.
+
+6. **Interview Fields Backward Compatibility**: 
+   - New interview fields (`problem1_solving_rating`, `problem2_solving_rating`, `DSA_Theory`, `Core_CS_Theory`, `overall_interview_score_out_of_100`) are preferred
+   - Old fields (`problem_solving_rating`, `conceptual_rating`, `overall_interview_rating`) are still supported for backward compatibility
+   - If new fields are present, they will be used; otherwise, old fields will be used as fallback
+   - `communication_rating` scale has been updated from 0-10 to 0-5
 
 ---
 

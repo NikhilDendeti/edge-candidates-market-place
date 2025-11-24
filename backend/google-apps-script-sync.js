@@ -5,7 +5,7 @@ const CFG = {
   HEADER_ROW: 1,
 
   STUDENT_FIELDS: [
-    'full_name', 'phone', 'email', 'gender', 'resume_url',
+    'full_name', 'phone_number', 'email', 'gender', 'resume_url',
     'graduation_year', 'cgpa', 'Nxtwave User ID', 'nxtwave_user_id'
   ],
   
@@ -31,9 +31,14 @@ const CFG = {
   
   INTERVIEW_FIELDS: [
     'interview_date', 'recording_url', 'recoding_url',
-    'self_intro_rating', 'problem_solving_rating',
-    'communication_rating', 'conceptual_rating',
-    'overall_interview_rating', 'overall_label',
+    'self_intro_rating', 'problem_solving_rating', // DEPRECATED: Keep for backward compatibility
+    'problem1_solving_rating', 'problem1_solving_rating_code',
+    'problem2_solving_rating', 'problem2_solving_rating_code',
+    'communication_rating', 'conceptual_rating', // DEPRECATED: Keep for backward compatibility
+    'DSA_Theory', 'Core_CS_Theory',
+    'overall_interview_rating', // DEPRECATED: Keep for backward compatibility
+    'overall_interview_score_out_of_100',
+    'overall_label',
     'interview_notes', 'notes'
   ]
 };
@@ -125,8 +130,14 @@ function syncRow_(sheet, row) {
 
   // 2. Handle Student
   // REQUIRED: email OR nxtwave_user_id (at least one)
-  // OPTIONAL: phone, gender, resume_url, graduation_year, cgpa (will be null if missing)
+  // OPTIONAL: phone_number, gender, resume_url, graduation_year, cgpa (will be null if missing)
   const studentPayload = pick_(rec, CFG.STUDENT_FIELDS);
+  
+  // Map phone_number to phone (database column name)
+  if (studentPayload.phone_number) {
+    studentPayload.phone = studentPayload.phone_number;
+    delete studentPayload.phone_number;
+  }
   
   // Use email or nxtwave_user_id to check for existing student
   if (!studentPayload.email && !studentPayload['Nxtwave User ID'] && !studentPayload.nxtwave_user_id) {
@@ -201,11 +212,21 @@ function syncRow_(sheet, row) {
       student_id: studentId,
       interview_date: toISO_(interviewBase.interview_date),
       recording_url: interviewBase.recording_url || interviewBase.recoding_url || null,
+      // Old fields (kept for backward compatibility)
       self_intro_rating: toFloat_(interviewBase.self_intro_rating),
-      problem_solving_rating: toFloat_(interviewBase.problem_solving_rating),
+      problem_solving_rating: toFloat_(interviewBase.problem_solving_rating), // DEPRECATED
       communication_rating: toFloat_(interviewBase.communication_rating),
-      conceptual_rating: toFloat_(interviewBase.conceptual_rating),
-      overall_interview_rating: toFloat_(interviewBase.overall_interview_rating),
+      conceptual_rating: toFloat_(interviewBase.conceptual_rating), // DEPRECATED
+      overall_interview_rating: toFloat_(interviewBase.overall_interview_rating), // DEPRECATED
+      // New fields
+      problem1_solving_rating: toFloat_(interviewBase.problem1_solving_rating),
+      problem1_solving_rating_code: interviewBase.problem1_solving_rating_code || null,
+      problem2_solving_rating: toFloat_(interviewBase.problem2_solving_rating),
+      problem2_solving_rating_code: interviewBase.problem2_solving_rating_code || null,
+      DSA_Theory: toFloat_(interviewBase.DSA_Theory),
+      Core_CS_Theory: toFloat_(interviewBase.Core_CS_Theory),
+      overall_interview_score_out_of_100: toFloat_(interviewBase.overall_interview_score_out_of_100),
+      // Common fields
       overall_label: normalizeOverallLabel_(interviewBase.overall_label),
       notes: interviewBase.interview_notes || interviewBase.notes || null
     };

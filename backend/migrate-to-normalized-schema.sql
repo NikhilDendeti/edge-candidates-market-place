@@ -119,23 +119,42 @@ CREATE TABLE interviews (
   student_id UUID NOT NULL,
   interview_date TIMESTAMP WITH TIME ZONE NOT NULL,
   recording_url TEXT,
-  self_intro_rating NUMERIC(3,1) CHECK (self_intro_rating >= 0 AND self_intro_rating <= 10),
-  problem_solving_rating NUMERIC(3,1) CHECK (problem_solving_rating >= 0 AND problem_solving_rating <= 10),
-  communication_rating NUMERIC(3,1) CHECK (communication_rating >= 0 AND communication_rating <= 10),
-  conceptual_rating NUMERIC(3,1) CHECK (conceptual_rating >= 0 AND conceptual_rating <= 10),
-  overall_interview_rating NUMERIC(3,1) CHECK (overall_interview_rating >= 0 AND overall_interview_rating <= 10),
+  self_intro_rating NUMERIC(3,1) CHECK (self_intro_rating >= 0 AND self_intro_rating <= 5),
+  -- New problem solving fields (out of 5)
+  problem1_solving_rating NUMERIC(3,1) CHECK (problem1_solving_rating >= 0 AND problem1_solving_rating <= 5),
+  problem1_solving_rating_code TEXT,
+  problem2_solving_rating NUMERIC(3,1) CHECK (problem2_solving_rating >= 0 AND problem2_solving_rating <= 5),
+  problem2_solving_rating_code TEXT,
+  -- Communication rating (updated to 0-5 scale)
+  communication_rating NUMERIC(3,1) CHECK (communication_rating >= 0 AND communication_rating <= 5),
+  -- New theory fields (out of 5)
+  "DSA_Theory" NUMERIC(3,1) CHECK ("DSA_Theory" >= 0 AND "DSA_Theory" <= 5),
+  "Core_CS_Theory" NUMERIC(3,1) CHECK ("Core_CS_Theory" >= 0 AND "Core_CS_Theory" <= 5),
+  -- Overall score (out of 100)
+  overall_interview_score_out_of_100 NUMERIC(5,2) CHECK (overall_interview_score_out_of_100 >= 0 AND overall_interview_score_out_of_100 <= 100),
   overall_label VARCHAR(50) CHECK (overall_label IN ('Strong Hire', 'Medium Fit', 'Consider')),
   notes TEXT,
+  -- Deprecated fields (kept for backward compatibility)
+  problem_solving_rating NUMERIC(3,1) CHECK (problem_solving_rating >= 0 AND problem_solving_rating <= 10),
+  conceptual_rating NUMERIC(3,1) CHECK (conceptual_rating >= 0 AND conceptual_rating <= 10),
+  overall_interview_rating NUMERIC(3,1) CHECK (overall_interview_rating >= 0 AND overall_interview_rating <= 10),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT fk_interviews_student FOREIGN KEY (student_id) REFERENCES students(nxtwave_user_id) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE interviews IS 'Interview events conducted with students';
-COMMENT ON COLUMN interviews.self_intro_rating IS 'Self introduction rating (0-10 scale)';
-COMMENT ON COLUMN interviews.problem_solving_rating IS 'Problem solving ability rating (0-10 scale)';
-COMMENT ON COLUMN interviews.communication_rating IS 'Communication skills rating (0-10 scale)';
-COMMENT ON COLUMN interviews.conceptual_rating IS 'Conceptual understanding rating (0-10 scale)';
-COMMENT ON COLUMN interviews.overall_interview_rating IS 'Overall interview performance rating (0-10 scale)';
+COMMENT ON COLUMN interviews.self_intro_rating IS 'Self introduction rating (0-5 scale)';
+COMMENT ON COLUMN interviews.problem1_solving_rating IS 'Problem 1 solving rating (0-5 scale)';
+COMMENT ON COLUMN interviews.problem1_solving_rating_code IS 'Problem 1 code/reference identifier';
+COMMENT ON COLUMN interviews.problem2_solving_rating IS 'Problem 2 solving rating (0-5 scale)';
+COMMENT ON COLUMN interviews.problem2_solving_rating_code IS 'Problem 2 code/reference identifier';
+COMMENT ON COLUMN interviews.communication_rating IS 'Communication skills rating (0-5 scale)';
+COMMENT ON COLUMN interviews."DSA_Theory" IS 'DSA Theory rating (0-5 scale)';
+COMMENT ON COLUMN interviews."Core_CS_Theory" IS 'Core CS Theory rating (0-5 scale)';
+COMMENT ON COLUMN interviews.overall_interview_score_out_of_100 IS 'Overall interview performance score (0-100 scale)';
+COMMENT ON COLUMN interviews.problem_solving_rating IS 'DEPRECATED: Use problem1_solving_rating and problem2_solving_rating instead. Problem solving ability rating (0-10 scale)';
+COMMENT ON COLUMN interviews.conceptual_rating IS 'DEPRECATED: Use DSA_Theory and Core_CS_Theory instead. Conceptual understanding rating (0-10 scale)';
+COMMENT ON COLUMN interviews.overall_interview_rating IS 'DEPRECATED: Use overall_interview_score_out_of_100 instead. Overall interview performance rating (0-10 scale)';
 
 -- ============================================================================
 -- INDEXES
