@@ -35,16 +35,25 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
     if (error) {
       // Log the actual error for debugging
       console.error('Supabase query error:', {
+        studentId,
         code: error.code,
         message: error.message,
         details: error.details,
         hint: error.hint,
+        fullError: error,
       })
       
       if (error.code === 'PGRST116') {
         throw new NotFoundError('Student')
       }
-      throw error
+      
+      // Wrap Supabase errors in DatabaseError for consistent error handling
+      throw new DatabaseError('Failed to fetch student from database', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      })
     }
 
     if (!students) {
@@ -64,17 +73,31 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
       // This handles cases where nested relations don't load properly
       for (const assessment of students.assessments) {
         if (!assessment.assessment_scores || assessment.assessment_scores.length === 0) {
-          const { data: scores, error: scoresError } = await supabase
-            .from('assessment_scores')
-            .select(`
-              *,
-              score_types (*)
-            `)
-            .eq('assessment_id', assessment.assessment_id)
+          try {
+            const { data: scores, error: scoresError } = await supabase
+              .from('assessment_scores')
+              .select(`
+                *,
+                score_types (*)
+              `)
+              .eq('assessment_id', assessment.assessment_id)
 
-          if (!scoresError && scores) {
-            assessment.assessment_scores = scores
-          } else {
+            if (scoresError) {
+              console.warn('Failed to fetch assessment_scores:', {
+                assessment_id: assessment.assessment_id,
+                error: scoresError,
+              })
+              assessment.assessment_scores = []
+            } else if (scores) {
+              assessment.assessment_scores = scores
+            } else {
+              assessment.assessment_scores = []
+            }
+          } catch (nestedError: any) {
+            console.error('Error fetching assessment_scores:', {
+              assessment_id: assessment.assessment_id,
+              error: nestedError,
+            })
             assessment.assessment_scores = []
           }
         }
@@ -92,19 +115,64 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
     // Transform to StudentProfile
     return transformToStudentProfile(students)
   } catch (error: any) {
-    if (error instanceof NotFoundError) {
+    // Let known API errors pass through
+    if (error instanceof NotFoundError || error instanceof DatabaseError) {
       throw error
     }
-    // Include more error details in the DatabaseError
-    const errorMessage = error?.message || 'Unknown error'
-    const errorCode = error?.code || 'UNKNOWN'
+    
+    // Handle different error types
+    let errorMessage = 'Unknown error'
+    let errorCode = 'UNKNOWN'
+    const errorDetails: any = {}
+    
+    // Handle string errors
+    if (typeof error === 'string') {
+      errorMessage = error
+    }
+    // Handle Error objects
+    else if (error instanceof Error) {
+      errorMessage = error.message || 'Unknown error'
+      errorCode = (error as any).code || 'UNKNOWN'
+      if (error.stack) {
+        errorDetails.stack = error.stack
+      }
+    }
+    // Handle Supabase/PostgREST errors
+    else if (error && typeof error === 'object') {
+      errorMessage = error.message || error.error_description || 'Unknown error'
+      errorCode = error.code || 'UNKNOWN'
+      
+      if (error.details) {
+        errorDetails.details = error.details
+      }
+      if (error.hint) {
+        errorDetails.hint = error.hint
+      }
+      // Include the full error object for debugging
+      errorDetails.originalError = {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      }
+    }
+    
     console.error('Error in getStudentProfile:', {
       studentId,
+      errorType: typeof error,
       errorMessage,
       errorCode,
-      error,
+      errorDetails,
+      fullError: error,
+      errorString: String(error),
     })
-    throw new DatabaseError('Failed to fetch student profile', { originalError: error, message: errorMessage, code: errorCode })
+    
+    // Pass comprehensive error details
+    throw new DatabaseError('Failed to fetch student profile', {
+      message: errorMessage,
+      code: errorCode,
+      ...errorDetails,
+    })
   }
 }
 
