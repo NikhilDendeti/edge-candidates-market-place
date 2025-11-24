@@ -11,6 +11,7 @@ import candidateRoutes from './routes/candidates.js'
 import studentRoutes from './routes/students.js'
 import statsRoutes from './routes/stats.js'
 import userRoutes from './routes/users.js'
+import diagnosticsRoutes from './routes/diagnostics.js'
 
 const app = express()
 
@@ -51,6 +52,7 @@ app.use('/api/stats', statsRoutes)
 app.use('/api/candidates', candidateRoutes)
 app.use('/api/students', studentRoutes)
 app.use('/api/users', userRoutes)
+app.use('/api/diagnostics', diagnosticsRoutes)
 
 // Error handling
 app.use(errorHandler)

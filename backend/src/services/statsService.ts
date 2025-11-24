@@ -24,7 +24,21 @@ export async function getStatsSummary(): Promise<StatsSummary> {
       .from('students')
       .select('*', { count: 'exact', head: true })
 
-    if (countError) throw countError
+    if (countError) {
+      console.error('Supabase count error:', {
+        code: countError.code,
+        message: countError.message,
+        details: countError.details,
+        hint: countError.hint,
+        fullError: countError,
+      })
+      throw new DatabaseError('Failed to fetch candidate count', {
+        message: countError.message,
+        code: countError.code,
+        details: countError.details,
+        hint: countError.hint,
+      })
+    }
 
     // Get branch distribution
     const branchDistribution = await getBranchDistribution()
@@ -38,7 +52,50 @@ export async function getStatsSummary(): Promise<StatsSummary> {
       verdictSummary,
     }
   } catch (error: any) {
-    throw new DatabaseError('Failed to fetch statistics', error)
+    // Let known API errors pass through
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    
+    // Handle different error types
+    let errorMessage = 'Unknown error'
+    let errorCode = 'UNKNOWN'
+    const errorDetails: any = {}
+    
+    if (typeof error === 'string') {
+      errorMessage = error
+    } else if (error instanceof Error) {
+      errorMessage = error.message || 'Unknown error'
+      errorCode = (error as any).code || 'UNKNOWN'
+      if (error.stack) {
+        errorDetails.stack = error.stack
+      }
+    } else if (error && typeof error === 'object') {
+      errorMessage = error.message || error.error_description || 'Unknown error'
+      errorCode = error.code || 'UNKNOWN'
+      if (error.details) errorDetails.details = error.details
+      if (error.hint) errorDetails.hint = error.hint
+      errorDetails.originalError = {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      }
+    }
+    
+    console.error('Error in getStatsSummary:', {
+      errorType: typeof error,
+      errorMessage,
+      errorCode,
+      errorDetails,
+      fullError: error,
+    })
+    
+    throw new DatabaseError('Failed to fetch statistics', {
+      message: errorMessage,
+      code: errorCode,
+      ...errorDetails,
+    })
   }
 }
 
@@ -57,7 +114,21 @@ export async function getBranchDistribution(): Promise<BranchDistribution[]> {
         )
       `)
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase query error (branch distribution):', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        fullError: error,
+      })
+      throw new DatabaseError('Failed to fetch branch distribution from database', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      })
+    }
 
     // Count branches
     const branchCounts: Record<string, number> = {}
@@ -105,7 +176,38 @@ export async function getBranchDistribution(): Promise<BranchDistribution[]> {
 
     return distribution
   } catch (error: any) {
-    throw new DatabaseError('Failed to fetch branch distribution', error)
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    
+    let errorMessage = 'Unknown error'
+    let errorCode = 'UNKNOWN'
+    const errorDetails: any = {}
+    
+    if (typeof error === 'string') {
+      errorMessage = error
+    } else if (error instanceof Error) {
+      errorMessage = error.message || 'Unknown error'
+      errorCode = (error as any).code || 'UNKNOWN'
+    } else if (error && typeof error === 'object') {
+      errorMessage = error.message || 'Unknown error'
+      errorCode = error.code || 'UNKNOWN'
+      if (error.details) errorDetails.details = error.details
+      if (error.hint) errorDetails.hint = error.hint
+    }
+    
+    console.error('Error in getBranchDistribution:', {
+      errorType: typeof error,
+      errorMessage,
+      errorCode,
+      fullError: error,
+    })
+    
+    throw new DatabaseError('Failed to fetch branch distribution', {
+      message: errorMessage,
+      code: errorCode,
+      ...errorDetails,
+    })
   }
 }
 
@@ -119,7 +221,21 @@ export async function getVerdictSummary(): Promise<VerdictSummary[]> {
       .from('interviews')
       .select('overall_label')
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase query error (branch distribution):', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        fullError: error,
+      })
+      throw new DatabaseError('Failed to fetch branch distribution from database', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      })
+    }
 
     // Count by verdict
     const verdictCounts: Record<string, number> = {
@@ -144,7 +260,38 @@ export async function getVerdictSummary(): Promise<VerdictSummary[]> {
       { label: 'Low', count: verdictCounts.Low },
     ]
   } catch (error: any) {
-    throw new DatabaseError('Failed to fetch verdict summary', error)
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    
+    let errorMessage = 'Unknown error'
+    let errorCode = 'UNKNOWN'
+    const errorDetails: any = {}
+    
+    if (typeof error === 'string') {
+      errorMessage = error
+    } else if (error instanceof Error) {
+      errorMessage = error.message || 'Unknown error'
+      errorCode = (error as any).code || 'UNKNOWN'
+    } else if (error && typeof error === 'object') {
+      errorMessage = error.message || 'Unknown error'
+      errorCode = error.code || 'UNKNOWN'
+      if (error.details) errorDetails.details = error.details
+      if (error.hint) errorDetails.hint = error.hint
+    }
+    
+    console.error('Error in getVerdictSummary:', {
+      errorType: typeof error,
+      errorMessage,
+      errorCode,
+      fullError: error,
+    })
+    
+    throw new DatabaseError('Failed to fetch verdict summary', {
+      message: errorMessage,
+      code: errorCode,
+      ...errorDetails,
+    })
   }
 }
 

@@ -68,8 +68,22 @@ export async function getCandidates(filters: CandidateFilters): Promise<Candidat
     const { data, error } = await query
 
     if (error) {
-      console.error('Database query error:', error)
-      throw error
+      // Log the actual error for debugging
+      console.error('Supabase query error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        fullError: error,
+      })
+      
+      // Wrap Supabase errors in DatabaseError for consistent error handling
+      throw new DatabaseError('Failed to fetch candidates from database', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      })
     }
 
     // Transform data
@@ -164,7 +178,64 @@ export async function getCandidates(filters: CandidateFilters): Promise<Candidat
       branchMix,
     }
   } catch (error: any) {
-    throw new DatabaseError('Failed to fetch candidates', error)
+    // Let known API errors pass through
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    
+    // Handle different error types
+    let errorMessage = 'Unknown error'
+    let errorCode = 'UNKNOWN'
+    const errorDetails: any = {}
+    
+    // Handle string errors
+    if (typeof error === 'string') {
+      errorMessage = error
+    }
+    // Handle Error objects
+    else if (error instanceof Error) {
+      errorMessage = error.message || 'Unknown error'
+      errorCode = (error as any).code || 'UNKNOWN'
+      if (error.stack) {
+        errorDetails.stack = error.stack
+      }
+    }
+    // Handle Supabase/PostgREST errors
+    else if (error && typeof error === 'object') {
+      errorMessage = error.message || error.error_description || 'Unknown error'
+      errorCode = error.code || 'UNKNOWN'
+      
+      if (error.details) {
+        errorDetails.details = error.details
+      }
+      if (error.hint) {
+        errorDetails.hint = error.hint
+      }
+      // Include the full error object for debugging
+      errorDetails.originalError = {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      }
+    }
+    
+    console.error('Error in getCandidates:', {
+      filters,
+      errorType: typeof error,
+      errorMessage,
+      errorCode,
+      errorDetails,
+      fullError: error,
+      errorString: String(error),
+    })
+    
+    // Pass comprehensive error details
+    throw new DatabaseError('Failed to fetch candidates', {
+      message: errorMessage,
+      code: errorCode,
+      ...errorDetails,
+    })
   }
 }
 
