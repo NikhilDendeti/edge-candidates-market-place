@@ -26,6 +26,7 @@ export interface CandidateFilters {
   verdict?: 'Strong' | 'Medium' | 'Low' | 'All'
   sort?: 'assessment_avg' | 'interview_avg' | 'cgpa' | 'latest'
   order?: 'asc' | 'desc'
+  includeAllData?: boolean
 }
 
 export interface BranchDistribution {

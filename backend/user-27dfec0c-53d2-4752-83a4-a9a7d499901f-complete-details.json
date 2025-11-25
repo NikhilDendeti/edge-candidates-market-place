@@ -1,0 +1,332 @@
+{
+  "timestamp": "2025-11-25T19:17:50.380Z",
+  "userId": "27dfec0c-53d2-4752-83a4-a9a7d499901f",
+  "student": {
+    "user_id": "27dfec0c-53d2-4752-83a4-a9a7d499901f",
+    "full_name": "Mihir Bairathi",
+    "phone": "8306933994",
+    "email": "mihirbairathi25@gmail.com",
+    "gender": "Male",
+    "resume_url": "https://nw-forms-backend-media-static.s3.ap-south-1.amazonaws.com/ccbp_prod/media/upload/resume/1760120805974_MIHIR_BAIRATHI_RESUME_SEPTEMBER_2025_93c221cf-38ba-46b1-9556-94f03b672abf.pdf",
+    "graduation_year": 2026,
+    "cgpa": 7,
+    "created_at": "2025-11-25T17:41:37.706463+00:00",
+    "updated_at": "2025-11-25T17:41:37.706483+00:00",
+    "college_id": "191e53f5-3b8c-4191-b743-7181486e25ce",
+    "colleges": {
+      "name": "IIT Patna",
+      "branch": "Electrical & Electronics Engineering (EEE)",
+      "degree": "B Tech (Bachelor of Technology)",
+      "college_id": "191e53f5-3b8c-4191-b743-7181486e25ce",
+      "created_at": "2025-11-25T17:41:36.976315+00:00",
+      "updated_at": "2025-11-25T17:41:36.976345+00:00"
+    },
+    "assessments": [
+      {
+        "taken_at": "Nov 1, 2025",
+        "created_at": "2025-11-25T17:41:37.848843+00:00",
+        "report_url": "https://config.topin.tech/candidate-statistics/ed1cfec2-ff8f-45c0-9bba-f72f6246f886/27dfec0c-53d2-4752-83a4-a9a7d499901f",
+        "student_id": "27dfec0c-53d2-4752-83a4-a9a7d499901f",
+        "updated_at": "2025-11-25T17:41:37.848869+00:00",
+        "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+        "org_assess_id": "ed1cfec2-ff8f-45c0-9bba-f72f6246f886",
+        "proctor_details": null,
+        "assessment_scores": [
+          {
+            "score": 86.61,
+            "duration": 90,
+            "max_score": 120,
+            "created_at": "2025-11-25T17:41:37.990221+00:00",
+            "time_spent": 85.03,
+            "score_types": {
+              "key": "coding",
+              "created_at": "2025-11-25T17:41:09.793577+00:00",
+              "description": "Coding",
+              "display_name": "Coding",
+              "score_type_id": "7942dbae-3a66-4343-a7f3-72dbfead173b"
+            },
+            "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+            "score_type_id": "7942dbae-3a66-4343-a7f3-72dbfead173b",
+            "assessment_score_id": "1a2bd5f8-ea54-4a92-bc8b-2606c4183b16"
+          },
+          {
+            "score": 7,
+            "duration": 15,
+            "max_score": 10,
+            "created_at": "2025-11-25T17:41:38.2201+00:00",
+            "time_spent": 8.07,
+            "score_types": {
+              "key": "dsa",
+              "created_at": "2025-11-25T17:41:10.443918+00:00",
+              "description": "DSA",
+              "display_name": "DSA",
+              "score_type_id": "f7aac52e-efe0-4c50-862b-d5e57ac2c35b"
+            },
+            "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+            "score_type_id": "f7aac52e-efe0-4c50-862b-d5e57ac2c35b",
+            "assessment_score_id": "ae335acb-8463-456f-bbc6-883d198a6252"
+          },
+          {
+            "score": 23,
+            "duration": 40,
+            "max_score": 40,
+            "created_at": "2025-11-25T17:41:38.358119+00:00",
+            "time_spent": 10.57,
+            "score_types": {
+              "key": "cs_fundamentals",
+              "created_at": "2025-11-25T17:41:11.186659+00:00",
+              "description": "CS Fundamentals",
+              "display_name": "CS Fundamentals",
+              "score_type_id": "e830e283-7cd7-4901-a0f3-7e825775485f"
+            },
+            "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+            "score_type_id": "e830e283-7cd7-4901-a0f3-7e825775485f",
+            "assessment_score_id": "e14ddf89-2e5b-4f49-a8e7-a495724766d3"
+          },
+          {
+            "score": 11,
+            "duration": 20,
+            "max_score": 15,
+            "created_at": "2025-11-25T17:41:38.495625+00:00",
+            "time_spent": 17.62,
+            "score_types": {
+              "key": "quantitative_aptitude",
+              "created_at": "2025-11-25T17:41:11.749938+00:00",
+              "description": "Quantitative Aptitude",
+              "display_name": "Quantitative Aptitude",
+              "score_type_id": "4b9cdecc-5fa6-45bc-995e-2b6919969060"
+            },
+            "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+            "score_type_id": "4b9cdecc-5fa6-45bc-995e-2b6919969060",
+            "assessment_score_id": "4015da3a-fdf3-43a8-a943-51d68302bfcf"
+          },
+          {
+            "score": 5,
+            "duration": 10,
+            "max_score": 10,
+            "created_at": "2025-11-25T17:41:38.63915+00:00",
+            "time_spent": 5.08,
+            "score_types": {
+              "key": "verbal_ability",
+              "created_at": "2025-11-25T17:41:12.310906+00:00",
+              "description": "Verbal Ability",
+              "display_name": "Verbal Ability",
+              "score_type_id": "cfbd1b00-25fb-4d09-b91f-585ae9bffccf"
+            },
+            "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+            "score_type_id": "cfbd1b00-25fb-4d09-b91f-585ae9bffccf",
+            "assessment_score_id": "7cd626e9-ec80-4c04-b2c2-d85f3c821f6e"
+          },
+          {
+            "score": 7,
+            "duration": 20,
+            "max_score": 15,
+            "created_at": "2025-11-25T17:41:38.78024+00:00",
+            "time_spent": 17.05,
+            "score_types": {
+              "key": "logical_reasoning",
+              "created_at": "2025-11-25T17:41:12.877334+00:00",
+              "description": "Logical Reasoning",
+              "display_name": "Logical Reasoning",
+              "score_type_id": "70d9e1af-0457-48bb-aa6d-084145f35a8c"
+            },
+            "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+            "score_type_id": "70d9e1af-0457-48bb-aa6d-084145f35a8c",
+            "assessment_score_id": "20e5132f-2583-440e-9f1c-83d61ab82e54"
+          }
+        ],
+        "attempt_end_reason": null,
+        "total_student_score": 139.61
+      }
+    ],
+    "interviews": [
+      {
+        "notes": "Very strong candidate with good communication and problem-solving skills.",
+        "created_at": "2025-11-25T17:41:38.92155+00:00",
+        "student_id": "27dfec0c-53d2-4752-83a4-a9a7d499901f",
+        "interview_id": "d134547a-0956-49fa-ac84-fd01cd449f8a",
+        "recording_url": null,
+        "interview_date": "Nov 1, 2025",
+        "dsa_theory_rating": 5,
+        "audit_final_status": "STRONG HIRE",
+        "communication_rating": 3,
+        "core_cs_theory_rating": 5,
+        "problem1_solving_rating": 5,
+        "problem2_solving_rating": 5,
+        "overall_interview_score_out_of_100": 96,
+        "problem1_code_implementation_rating": 4,
+        "problem2_code_implementation_rating": 5
+      }
+    ]
+  },
+  "relatedData": {
+    "assessments": [
+      {
+        "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+        "taken_at": "Nov 1, 2025",
+        "report_url": "https://config.topin.tech/candidate-statistics/ed1cfec2-ff8f-45c0-9bba-f72f6246f886/27dfec0c-53d2-4752-83a4-a9a7d499901f",
+        "org_assess_id": "ed1cfec2-ff8f-45c0-9bba-f72f6246f886",
+        "total_student_score": 139.61,
+        "attempt_end_reason": null,
+        "proctor_details": null,
+        "created_at": "2025-11-25T17:41:37.848843+00:00",
+        "updated_at": "2025-11-25T17:41:37.848869+00:00",
+        "student_id": "27dfec0c-53d2-4752-83a4-a9a7d499901f"
+      }
+    ],
+    "interviews": [
+      {
+        "interview_id": "d134547a-0956-49fa-ac84-fd01cd449f8a",
+        "interview_date": "Nov 1, 2025",
+        "recording_url": null,
+        "communication_rating": 3,
+        "core_cs_theory_rating": 5,
+        "dsa_theory_rating": 5,
+        "problem1_solving_rating": 5,
+        "problem1_code_implementation_rating": 4,
+        "problem2_solving_rating": 5,
+        "problem2_code_implementation_rating": 5,
+        "overall_interview_score_out_of_100": 96,
+        "notes": "Very strong candidate with good communication and problem-solving skills.",
+        "audit_final_status": "STRONG HIRE",
+        "created_at": "2025-11-25T17:41:38.92155+00:00",
+        "student_id": "27dfec0c-53d2-4752-83a4-a9a7d499901f"
+      }
+    ],
+    "assessmentScores": [
+      {
+        "assessment_score_id": "1a2bd5f8-ea54-4a92-bc8b-2606c4183b16",
+        "score": 86.61,
+        "max_score": 120,
+        "time_spent": 85.03,
+        "duration": 90,
+        "created_at": "2025-11-25T17:41:37.990221+00:00",
+        "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+        "score_type_id": "7942dbae-3a66-4343-a7f3-72dbfead173b",
+        "assessments": {
+          "student_id": "27dfec0c-53d2-4752-83a4-a9a7d499901f"
+        },
+        "score_types": {
+          "key": "coding",
+          "created_at": "2025-11-25T17:41:09.793577+00:00",
+          "description": "Coding",
+          "display_name": "Coding",
+          "score_type_id": "7942dbae-3a66-4343-a7f3-72dbfead173b"
+        }
+      },
+      {
+        "assessment_score_id": "ae335acb-8463-456f-bbc6-883d198a6252",
+        "score": 7,
+        "max_score": 10,
+        "time_spent": 8.07,
+        "duration": 15,
+        "created_at": "2025-11-25T17:41:38.2201+00:00",
+        "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+        "score_type_id": "f7aac52e-efe0-4c50-862b-d5e57ac2c35b",
+        "assessments": {
+          "student_id": "27dfec0c-53d2-4752-83a4-a9a7d499901f"
+        },
+        "score_types": {
+          "key": "dsa",
+          "created_at": "2025-11-25T17:41:10.443918+00:00",
+          "description": "DSA",
+          "display_name": "DSA",
+          "score_type_id": "f7aac52e-efe0-4c50-862b-d5e57ac2c35b"
+        }
+      },
+      {
+        "assessment_score_id": "e14ddf89-2e5b-4f49-a8e7-a495724766d3",
+        "score": 23,
+        "max_score": 40,
+        "time_spent": 10.57,
+        "duration": 40,
+        "created_at": "2025-11-25T17:41:38.358119+00:00",
+        "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+        "score_type_id": "e830e283-7cd7-4901-a0f3-7e825775485f",
+        "assessments": {
+          "student_id": "27dfec0c-53d2-4752-83a4-a9a7d499901f"
+        },
+        "score_types": {
+          "key": "cs_fundamentals",
+          "created_at": "2025-11-25T17:41:11.186659+00:00",
+          "description": "CS Fundamentals",
+          "display_name": "CS Fundamentals",
+          "score_type_id": "e830e283-7cd7-4901-a0f3-7e825775485f"
+        }
+      },
+      {
+        "assessment_score_id": "4015da3a-fdf3-43a8-a943-51d68302bfcf",
+        "score": 11,
+        "max_score": 15,
+        "time_spent": 17.62,
+        "duration": 20,
+        "created_at": "2025-11-25T17:41:38.495625+00:00",
+        "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+        "score_type_id": "4b9cdecc-5fa6-45bc-995e-2b6919969060",
+        "assessments": {
+          "student_id": "27dfec0c-53d2-4752-83a4-a9a7d499901f"
+        },
+        "score_types": {
+          "key": "quantitative_aptitude",
+          "created_at": "2025-11-25T17:41:11.749938+00:00",
+          "description": "Quantitative Aptitude",
+          "display_name": "Quantitative Aptitude",
+          "score_type_id": "4b9cdecc-5fa6-45bc-995e-2b6919969060"
+        }
+      },
+      {
+        "assessment_score_id": "7cd626e9-ec80-4c04-b2c2-d85f3c821f6e",
+        "score": 5,
+        "max_score": 10,
+        "time_spent": 5.08,
+        "duration": 10,
+        "created_at": "2025-11-25T17:41:38.63915+00:00",
+        "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+        "score_type_id": "cfbd1b00-25fb-4d09-b91f-585ae9bffccf",
+        "assessments": {
+          "student_id": "27dfec0c-53d2-4752-83a4-a9a7d499901f"
+        },
+        "score_types": {
+          "key": "verbal_ability",
+          "created_at": "2025-11-25T17:41:12.310906+00:00",
+          "description": "Verbal Ability",
+          "display_name": "Verbal Ability",
+          "score_type_id": "cfbd1b00-25fb-4d09-b91f-585ae9bffccf"
+        }
+      },
+      {
+        "assessment_score_id": "20e5132f-2583-440e-9f1c-83d61ab82e54",
+        "score": 7,
+        "max_score": 15,
+        "time_spent": 17.05,
+        "duration": 20,
+        "created_at": "2025-11-25T17:41:38.78024+00:00",
+        "assessment_id": "65d64a21-5f41-4451-b1df-5aa1cb52aee7",
+        "score_type_id": "70d9e1af-0457-48bb-aa6d-084145f35a8c",
+        "assessments": {
+          "student_id": "27dfec0c-53d2-4752-83a4-a9a7d499901f"
+        },
+        "score_types": {
+          "key": "logical_reasoning",
+          "created_at": "2025-11-25T17:41:12.877334+00:00",
+          "description": "Logical Reasoning",
+          "display_name": "Logical Reasoning",
+          "score_type_id": "70d9e1af-0457-48bb-aa6d-084145f35a8c"
+        }
+      }
+    ]
+  },
+  "summary": {
+    "fullName": "Mihir Bairathi",
+    "email": "mihirbairathi25@gmail.com",
+    "phone": "8306933994",
+    "cgpa": 7,
+    "college": "IIT Patna",
+    "branch": "Electrical & Electronics Engineering (EEE)",
+    "totalAssessments": 1,
+    "totalInterviews": 1,
+    "graduationYear": 2026,
+    "gender": "Male",
+    "resumeUrl": "https://nw-forms-backend-media-static.s3.ap-south-1.amazonaws.com/ccbp_prod/media/upload/resume/1760120805974_MIHIR_BAIRATHI_RESUME_SEPTEMBER_2025_93c221cf-38ba-46b1-9556-94f03b672abf.pdf"
+  }
+}

@@ -4,7 +4,7 @@
  */
 import { supabase } from '../config/supabase.js';
 import { DatabaseError } from '../utils/errors.js';
-import { transformToCandidate, normalizeBranchName } from '../utils/transformers.js';
+import { transformToCandidate, transformToCompleteCandidateData, normalizeBranchName } from '../utils/transformers.js';
 /**
  * Get candidates list with filters and pagination
  */
@@ -61,8 +61,8 @@ export async function getCandidates(filters) {
                 hint: error.hint,
             });
         }
-        // Transform data
-        let candidates = (data || []).map(transformToCandidate);
+        // Transform data - use complete data transformer if requested
+        let candidates = (data || []).map(filters.includeAllData ? transformToCompleteCandidateData : transformToCandidate);
         // Calculate verdict counts BEFORE applying verdict filter (but after search filter)
         const verdictCounts = {
             Strong: 0,
@@ -70,13 +70,17 @@ export async function getCandidates(filters) {
             Low: 0,
         };
         candidates.forEach((candidate) => {
-            if (candidate.recommendation === 'Strong Hire') {
+            // Handle both transformed and complete data formats
+            const recommendation = candidate.recommendation ||
+                (candidate.interviews?.[0]?.audit_final_status?.toUpperCase().includes('STRONG') ? 'Strong Hire' :
+                    candidate.interviews?.[0]?.audit_final_status?.toUpperCase().includes('MEDIUM') ? 'Medium Fit' : 'Consider');
+            if (recommendation === 'Strong Hire') {
                 verdictCounts.Strong++;
             }
-            else if (candidate.recommendation === 'Medium Fit') {
+            else if (recommendation === 'Medium Fit') {
                 verdictCounts.Medium++;
             }
-            else if (candidate.recommendation === 'Consider') {
+            else if (recommendation === 'Consider') {
                 verdictCounts.Low++;
             }
         });

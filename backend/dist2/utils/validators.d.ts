@@ -9,6 +9,8 @@ export declare const candidateFiltersSchema: z.ZodObject<{
     verdict: z.ZodOptional<z.ZodEnum<["Strong", "Medium", "Low", "All"]>>;
     sort: z.ZodOptional<z.ZodEnum<["assessment_avg", "interview_avg", "cgpa", "latest"]>>;
     order: z.ZodDefault<z.ZodEnum<["asc", "desc"]>>;
+    includeAllData: z.ZodOptional<z.ZodBoolean>;
+    complete: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
     page: number;
     limit: number;
@@ -16,6 +18,8 @@ export declare const candidateFiltersSchema: z.ZodObject<{
     sort?: "assessment_avg" | "interview_avg" | "cgpa" | "latest" | undefined;
     search?: string | undefined;
     verdict?: "Strong" | "Medium" | "Low" | "All" | undefined;
+    includeAllData?: boolean | undefined;
+    complete?: boolean | undefined;
 }, {
     sort?: "assessment_avg" | "interview_avg" | "cgpa" | "latest" | undefined;
     page?: number | undefined;
@@ -23,6 +27,8 @@ export declare const candidateFiltersSchema: z.ZodObject<{
     search?: string | undefined;
     verdict?: "Strong" | "Medium" | "Low" | "All" | undefined;
     order?: "asc" | "desc" | undefined;
+    includeAllData?: boolean | undefined;
+    complete?: boolean | undefined;
 }>;
 export declare function validateCandidateFilters(query: any): {
     page: number;
@@ -31,6 +37,8 @@ export declare function validateCandidateFilters(query: any): {
     sort?: "assessment_avg" | "interview_avg" | "cgpa" | "latest" | undefined;
     search?: string | undefined;
     verdict?: "Strong" | "Medium" | "Low" | "All" | undefined;
+    includeAllData?: boolean | undefined;
+    complete?: boolean | undefined;
 };
 export declare const studentIdSchema: z.ZodString;
 export declare function validateStudentId(id: string): string;

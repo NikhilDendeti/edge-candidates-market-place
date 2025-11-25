@@ -9,7 +9,7 @@ import { getCandidateAlias, maskEmail, maskPhone, redactToEmptyArray } from './a
 
 // Database types (matching Supabase schema)
 interface StudentRecord {
-  nxtwave_user_id: string
+  user_id: string
   full_name: string
   phone?: string
   email?: string
@@ -57,7 +57,7 @@ interface StudentRecord {
     Core_CS_Theory?: number
     overall_interview_rating?: number // DEPRECATED: Use overall_interview_score_out_of_100
     overall_interview_score_out_of_100?: number
-    overall_label?: 'Strong Hire' | 'Medium Fit' | 'Consider'
+    audit_final_status?: string
     notes?: string
   }>
 }
@@ -130,7 +130,7 @@ function deriveSkillsWithCommunication(
  * Transform student record to Candidate type
  */
 export function transformToCandidate(student: StudentRecord): Candidate {
-  const alias = getCandidateAlias(student.nxtwave_user_id)
+  const alias = getCandidateAlias(student.user_id)
   const latestAssessment = student.assessments?.[0]
   const latestInterview = student.interviews?.[0]
 
@@ -155,11 +155,20 @@ export function transformToCandidate(student: StudentRecord): Candidate {
     interviewMeta = latestInterview.recording_url ? 'Recorded' : 'Not recorded'
   }
 
-  // Derive recommendation from interview or default
-  const recommendation: CandidateRecommendation = latestInterview?.overall_label || 'Consider'
+  // Derive recommendation from interview audit_final_status or default
+  // Map audit_final_status (e.g., "STRONG HIRE", "MEDIUM HIRE") to recommendation format
+  let recommendation: CandidateRecommendation = 'Consider'
+  if (latestInterview?.audit_final_status) {
+    const status = latestInterview.audit_final_status.toUpperCase()
+    if (status.includes('STRONG')) {
+      recommendation = 'Strong Hire'
+    } else if (status.includes('MEDIUM')) {
+      recommendation = 'Medium Fit'
+    }
+  }
 
   return {
-    id: student.nxtwave_user_id,
+    id: student.user_id,
     name: alias,
     college: student.colleges?.name || '',
     branch: student.colleges?.branch || '',
@@ -181,7 +190,7 @@ export function transformToCandidate(student: StudentRecord): Candidate {
  * Transform student record to StudentProfile type
  */
 export function transformToStudentProfile(student: StudentRecord): StudentProfile {
-  const alias = getCandidateAlias(student.nxtwave_user_id)
+  const alias = getCandidateAlias(student.user_id)
   const latestAssessment = student.assessments?.[0]
   const latestInterview = student.interviews?.[0]
   const maskedEmail = student.email ? maskEmail(student.email) : undefined
@@ -341,16 +350,25 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     reportUrl: redactToEmptyArray(),
   })) || []
 
+  // Helper function to map audit_final_status to overallLabel
+  const mapAuditStatusToLabel = (status: string | null | undefined): 'Strong Hire' | 'Medium Fit' | 'Consider' => {
+    if (!status) return 'Consider'
+    const normalized = status.toUpperCase().trim()
+    if (normalized.includes('STRONG')) return 'Strong Hire'
+    if (normalized.includes('MEDIUM')) return 'Medium Fit'
+    return 'Consider'
+  }
+
   // All interviews
   const allInterviews = student.interviews?.map((i) => ({
     interviewId: i.interview_id,
     interviewDate: i.interview_date,
-    overallLabel: i.overall_label || 'Consider',
+    overallLabel: mapAuditStatusToLabel(i.audit_final_status),
     recordingUrl: redactToEmptyArray(),
   })) || []
 
   return {
-    id: student.nxtwave_user_id,
+    id: student.user_id,
     name: alias,
     initials,
     meta,
@@ -389,7 +407,7 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
       overallRating: latestInterview.overall_interview_score_out_of_100 !== null && latestInterview.overall_interview_score_out_of_100 !== undefined
         ? latestInterview.overall_interview_score_out_of_100
         : (latestInterview.overall_interview_rating || 0),
-      overallLabel: latestInterview.overall_label || 'Consider',
+      overallLabel: mapAuditStatusToLabel(latestInterview.audit_final_status),
       notes: latestInterview.notes,
       problem1_solving_rating: latestInterview.problem1_solving_rating,
       problem1_solving_rating_code: latestInterview.problem1_solving_rating_code,
@@ -401,6 +419,215 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     } : undefined,
     allAssessments,
     allInterviews,
+  }
+}
+
+/**
+ * Transform student record to complete raw data (no anonymization)
+ * Returns all database fields as-is
+ */
+export function transformToCompleteStudentData(student: StudentRecord): any {
+  return {
+    // Student fields
+    user_id: student.user_id,
+    full_name: student.full_name,
+    phone: student.phone,
+    email: student.email,
+    gender: student.gender,
+    resume_url: student.resume_url,
+    graduation_year: student.graduation_year,
+    cgpa: student.cgpa,
+    college_id: (student as any).college_id,
+    created_at: student.created_at,
+    updated_at: (student as any).updated_at,
+    
+    // College data
+    college: student.colleges ? {
+      college_id: (student.colleges as any).college_id,
+      name: student.colleges.name,
+      branch: student.colleges.branch,
+      degree: (student.colleges as any).degree,
+      nirf_ranking: student.colleges.nirf_ranking,
+      city: student.colleges.city,
+      state: student.colleges.state,
+      created_at: (student.colleges as any).created_at,
+      updated_at: (student.colleges as any).updated_at,
+    } : null,
+    
+    // All assessments with complete data
+    assessments: student.assessments?.map((assessment: any) => ({
+      assessment_id: assessment.assessment_id,
+      student_id: assessment.student_id,
+      taken_at: assessment.taken_at,
+      report_url: assessment.report_url,
+      org_assess_id: assessment.org_assess_id,
+      total_student_score: assessment.total_student_score,
+      total_assessment_score: assessment.total_assessment_score,
+      percent: assessment.percent,
+      attempt_end_reason: assessment.attempt_end_reason,
+      proctor_details: assessment.proctor_details,
+      created_at: assessment.created_at,
+      updated_at: assessment.updated_at,
+      assessment_scores: assessment.assessment_scores?.map((score: any) => ({
+        assessment_score_id: score.assessment_score_id,
+        assessment_id: score.assessment_id,
+        score_type_id: score.score_type_id,
+        score: score.score,
+        max_score: score.max_score,
+        time_spent: score.time_spent,
+        duration: score.duration,
+        created_at: score.created_at,
+        score_type: score.score_types ? {
+          score_type_id: score.score_types.score_type_id,
+          key: score.score_types.key,
+          display_name: score.score_types.display_name,
+          description: score.score_types.description,
+          created_at: score.score_types.created_at,
+        } : null,
+      })) || [],
+    })) || [],
+    
+    // All interviews with complete data
+    interviews: student.interviews?.map((interview: any) => ({
+      interview_id: interview.interview_id,
+      student_id: interview.student_id,
+      interview_date: interview.interview_date,
+      recording_url: interview.recording_url,
+      communication_rating: interview.communication_rating,
+      core_cs_theory_rating: interview.core_cs_theory_rating,
+      dsa_theory_rating: interview.dsa_theory_rating,
+      problem1_solving_rating: interview.problem1_solving_rating,
+      problem1_code_implementation_rating: interview.problem1_code_implementation_rating,
+      problem1_solving_rating_code: interview.problem1_solving_rating_code,
+      problem2_solving_rating: interview.problem2_solving_rating,
+      problem2_code_implementation_rating: interview.problem2_code_implementation_rating,
+      problem2_solving_rating_code: interview.problem2_solving_rating_code,
+      overall_interview_score_out_of_100: interview.overall_interview_score_out_of_100,
+      notes: interview.notes,
+      audit_final_status: interview.audit_final_status,
+      created_at: interview.created_at,
+      // Include deprecated fields for completeness
+      self_intro_rating: interview.self_intro_rating,
+      problem_solving_rating: interview.problem_solving_rating,
+      conceptual_rating: interview.conceptual_rating,
+      overall_interview_rating: interview.overall_interview_rating,
+      DSA_Theory: interview.DSA_Theory,
+      Core_CS_Theory: interview.Core_CS_Theory,
+    })) || [],
+  }
+}
+
+/**
+ * Transform candidate to complete raw data (no anonymization)
+ */
+export function transformToCompleteCandidateData(student: StudentRecord): any {
+  const latestInterview = student.interviews?.[0]
+  
+  // Map audit_final_status to recommendation
+  let recommendation = 'Consider'
+  if (latestInterview?.audit_final_status) {
+    const status = latestInterview.audit_final_status.toUpperCase()
+    if (status.includes('STRONG')) {
+      recommendation = 'Strong Hire'
+    } else if (status.includes('MEDIUM')) {
+      recommendation = 'Medium Fit'
+    }
+  }
+  
+  return {
+    id: student.user_id,
+    user_id: student.user_id,
+    full_name: student.full_name,
+    name: student.full_name, // Keep alias for backward compatibility
+    phone: student.phone,
+    email: student.email,
+    gender: student.gender,
+    resume_url: student.resume_url,
+    graduation_year: student.graduation_year,
+    cgpa: student.cgpa,
+    college_id: (student as any).college_id,
+    created_at: student.created_at,
+    updated_at: (student as any).updated_at,
+    college: student.colleges?.name || '',
+    branch: student.colleges?.branch || '',
+    recommendation,
+    // Include all assessment and interview data with complete nested structures
+    assessments: student.assessments?.map((assessment: any) => ({
+      assessment_id: assessment.assessment_id,
+      student_id: assessment.student_id,
+      taken_at: assessment.taken_at,
+      report_url: assessment.report_url,
+      org_assess_id: assessment.org_assess_id,
+      total_student_score: assessment.total_student_score,
+      total_assessment_score: assessment.total_assessment_score,
+      percent: assessment.percent,
+      attempt_end_reason: assessment.attempt_end_reason,
+      proctor_details: assessment.proctor_details,
+      created_at: assessment.created_at,
+      updated_at: assessment.updated_at,
+      assessment_scores: assessment.assessment_scores?.map((score: any) => ({
+        assessment_score_id: score.assessment_score_id,
+        assessment_id: score.assessment_id,
+        score_type_id: score.score_type_id,
+        score: score.score,
+        max_score: score.max_score,
+        time_spent: score.time_spent,
+        duration: score.duration,
+        created_at: score.created_at,
+        score_types: score.score_types ? {
+          score_type_id: score.score_types.score_type_id,
+          key: score.score_types.key,
+          display_name: score.score_types.display_name,
+          description: score.score_types.description,
+          created_at: score.score_types.created_at,
+        } : null,
+        // Also include as score_type for consistency
+        score_type: score.score_types ? {
+          score_type_id: score.score_types.score_type_id,
+          key: score.score_types.key,
+          display_name: score.score_types.display_name,
+          description: score.score_types.description,
+          created_at: score.score_types.created_at,
+        } : null,
+      })) || [],
+    })) || [],
+    interviews: student.interviews?.map((interview: any) => ({
+      interview_id: interview.interview_id,
+      student_id: interview.student_id,
+      interview_date: interview.interview_date,
+      recording_url: interview.recording_url,
+      communication_rating: interview.communication_rating,
+      core_cs_theory_rating: interview.core_cs_theory_rating,
+      dsa_theory_rating: interview.dsa_theory_rating,
+      problem1_solving_rating: interview.problem1_solving_rating,
+      problem1_code_implementation_rating: interview.problem1_code_implementation_rating,
+      problem1_solving_rating_code: interview.problem1_solving_rating_code,
+      problem2_solving_rating: interview.problem2_solving_rating,
+      problem2_code_implementation_rating: interview.problem2_code_implementation_rating,
+      problem2_solving_rating_code: interview.problem2_solving_rating_code,
+      overall_interview_score_out_of_100: interview.overall_interview_score_out_of_100,
+      notes: interview.notes,
+      audit_final_status: interview.audit_final_status,
+      created_at: interview.created_at,
+      // Include deprecated fields for completeness
+      self_intro_rating: interview.self_intro_rating,
+      problem_solving_rating: interview.problem_solving_rating,
+      conceptual_rating: interview.conceptual_rating,
+      overall_interview_rating: interview.overall_interview_rating,
+      DSA_Theory: interview.DSA_Theory,
+      Core_CS_Theory: interview.Core_CS_Theory,
+    })) || [],
+    colleges: student.colleges ? {
+      college_id: (student.colleges as any).college_id,
+      name: student.colleges.name,
+      branch: student.colleges.branch,
+      degree: (student.colleges as any).degree,
+      nirf_ranking: student.colleges.nirf_ranking,
+      city: student.colleges.city,
+      state: student.colleges.state,
+      created_at: (student.colleges as any).created_at,
+      updated_at: (student.colleges as any).updated_at,
+    } : null,
   }
 }
 

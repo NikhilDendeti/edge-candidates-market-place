@@ -10,10 +10,17 @@ export const candidateFiltersSchema = z.object({
     verdict: z.enum(['Strong', 'Medium', 'Low', 'All']).optional(),
     sort: z.enum(['assessment_avg', 'interview_avg', 'cgpa', 'latest']).optional(),
     order: z.enum(['asc', 'desc']).default('desc'),
+    includeAllData: z.coerce.boolean().optional(),
+    complete: z.coerce.boolean().optional(), // Alias for includeAllData
 });
 export function validateCandidateFilters(query) {
     try {
-        return candidateFiltersSchema.parse(query);
+        const parsed = candidateFiltersSchema.parse(query);
+        // Handle alias: if 'complete' is true, set includeAllData to true
+        if (parsed.complete) {
+            parsed.includeAllData = true;
+        }
+        return parsed;
     }
     catch (error) {
         if (error instanceof z.ZodError) {

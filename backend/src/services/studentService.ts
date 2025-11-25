@@ -6,12 +6,14 @@
 import { supabase } from '../config/supabase.js'
 import { NotFoundError, DatabaseError } from '../utils/errors.js'
 import { StudentProfile } from '../types/student.types.js'
-import { transformToStudentProfile } from '../utils/transformers.js'
+import { transformToStudentProfile, transformToCompleteStudentData } from '../utils/transformers.js'
 
 /**
  * Get student profile by ID
+ * @param studentId - Student user_id
+ * @param includeAllData - If true, returns all database fields without anonymization
  */
-export async function getStudentProfile(studentId: string): Promise<StudentProfile> {
+export async function getStudentProfile(studentId: string, includeAllData: boolean = false): Promise<StudentProfile | any> {
   try {
     // Fetch student with all related data
     // Note: Ordering on foreign tables must be done after fetching, not in the query
@@ -29,7 +31,7 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
         ),
         interviews (*)
       `)
-      .eq('nxtwave_user_id', studentId)
+      .eq('user_id', studentId)
       .single()
 
     if (error) {
@@ -112,6 +114,11 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
       })
     }
 
+    // Return complete data if requested, otherwise transform to StudentProfile
+    if (includeAllData) {
+      return transformToCompleteStudentData(students)
+    }
+    
     // Transform to StudentProfile
     return transformToStudentProfile(students)
   } catch (error: any) {

@@ -5,7 +5,7 @@
 import { Candidate } from '../types/candidate.types.js';
 import { StudentProfile } from '../types/student.types.js';
 interface StudentRecord {
-    nxtwave_user_id: string;
+    user_id: string;
     full_name: string;
     phone?: string;
     email?: string;
@@ -53,7 +53,7 @@ interface StudentRecord {
         Core_CS_Theory?: number;
         overall_interview_rating?: number;
         overall_interview_score_out_of_100?: number;
-        overall_label?: 'Strong Hire' | 'Medium Fit' | 'Consider';
+        audit_final_status?: string;
         notes?: string;
     }>;
 }
@@ -65,6 +65,15 @@ export declare function transformToCandidate(student: StudentRecord): Candidate;
  * Transform student record to StudentProfile type
  */
 export declare function transformToStudentProfile(student: StudentRecord): StudentProfile;
+/**
+ * Transform student record to complete raw data (no anonymization)
+ * Returns all database fields as-is
+ */
+export declare function transformToCompleteStudentData(student: StudentRecord): any;
+/**
+ * Transform candidate to complete raw data (no anonymization)
+ */
+export declare function transformToCompleteCandidateData(student: StudentRecord): any;
 /**
  * Normalize branch name (same logic as frontend)
  */

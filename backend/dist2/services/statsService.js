@@ -193,14 +193,29 @@ export async function getBranchDistribution() {
 /**
  * Get verdict summary
  */
+/**
+ * Map audit_final_status to verdict category
+ */
+function mapAuditStatusToVerdict(status) {
+    if (!status)
+        return null;
+    const normalized = status.toUpperCase().trim();
+    if (normalized.includes('STRONG'))
+        return 'Strong';
+    if (normalized.includes('MEDIUM'))
+        return 'Medium';
+    if (normalized.includes('CONSIDER') || normalized.includes('LOW'))
+        return 'Low';
+    return null;
+}
 export async function getVerdictSummary() {
     try {
-        // Fetch interviews with overall_label
+        // Fetch interviews with audit_final_status (the actual column name in database)
         const { data: interviews, error } = await supabase
             .from('interviews')
-            .select('overall_label');
+            .select('audit_final_status');
         if (error) {
-            console.error('Supabase query error (branch distribution):', {
+            console.error('Supabase query error (verdict summary):', {
                 code: error.code,
                 message: error.message,
                 details: error.details,
@@ -221,14 +236,9 @@ export async function getVerdictSummary() {
             Low: 0,
         };
         interviews?.forEach((interview) => {
-            if (interview.overall_label === 'Strong Hire') {
-                verdictCounts.Strong++;
-            }
-            else if (interview.overall_label === 'Medium Fit') {
-                verdictCounts.Medium++;
-            }
-            else if (interview.overall_label === 'Consider') {
-                verdictCounts.Low++;
+            const verdict = mapAuditStatusToVerdict(interview.audit_final_status);
+            if (verdict) {
+                verdictCounts[verdict]++;
             }
         });
         return [
