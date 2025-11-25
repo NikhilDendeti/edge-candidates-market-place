@@ -1,7 +1,7 @@
 # API Specification - Edge Candidates Marketplace
 
-**Base URL**: `http://localhost:3001`  
-**API Version**: `1.0.0`  
+**Base URL**: `http://localhost:3001` (Development) / `https://edge-candidates-market-place.onrender.com` (Production)  
+**API Version**: `1.1.0`  
 **Content-Type**: `application/json`
 
 ---
@@ -257,7 +257,7 @@ GET /api/candidates?page=1&limit=20&search=john&verdict=Strong&sort=assessment_a
   - `interviewMeta` (string): Interview metadata (e.g., "Recorded" or date)
   - `skills` (array): Array of skill strings derived from assessment scores
   - `recommendation` (enum): Verdict: `"Strong Hire"`, `"Medium Fit"`, or `"Consider"`
-  - `resumeUrl` (string | null): URL to resume if available
+  - `resumeUrl` (string | null | array): URL to resume if available. In default mode, returns empty array `[]` for privacy. In complete data mode (`includeAllData=true`), returns actual URL string or `null`.
 - `pagination` (object): Pagination metadata
   - `page` (number): Current page number
   - `limit` (number): Items per page
@@ -299,7 +299,7 @@ Get complete detailed profile of a specific student including all assessments an
 
 **Request**:
 ```http
-GET /api/students/{id}
+GET /api/students/{id}?includeAllData=true
 ```
 
 **Path Parameters**:
@@ -307,6 +307,29 @@ GET /api/students/{id}
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `id` | UUID | Yes | Student's nxtwave_user_id |
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `includeAllData` | boolean | No | `false` | If `true`, returns all raw database fields without anonymization (unredacted email, phone, resume URLs, etc.) |
+| `complete` | boolean | No | `false` | Alias for `includeAllData` (same functionality) |
+
+**Response Modes**:
+
+1. **Default Mode** (without `includeAllData=true`):
+   - Returns anonymized/transformed data
+   - Names are aliased (e.g., "NE Can-01")
+   - Email and phone are masked
+   - Resume URLs are redacted (empty array)
+   - Optimized for frontend display
+
+2. **Complete Data Mode** (with `includeAllData=true` or `complete=true`):
+   - Returns all raw database fields
+   - Full names, unmasked emails/phones
+   - Complete resume URLs
+   - All assessment and interview details with nested structures
+   - Matches database schema exactly
 
 **Response** (200 OK):
 ```json
@@ -533,8 +556,98 @@ GET /api/students/{id}
 **Example Requests**:
 
 ```bash
-# Get student profile by ID
+# Get student profile by ID (anonymized/transformed data)
 curl http://localhost:3001/api/students/3c6e6834-cffb-4a17-845d-905d94f05f50
+
+# Get complete raw data (all fields, unredacted)
+curl "http://localhost:3001/api/students/3c6e6834-cffb-4a17-845d-905d94f05f50?includeAllData=true"
+
+# Alternative syntax (same as above)
+curl "http://localhost:3001/api/students/3c6e6834-cffb-4a17-845d-905d94f05f50?complete=true"
+```
+
+**Complete Data Response** (when `includeAllData=true`):
+
+When `includeAllData=true` is used, the response structure changes to match the raw database schema:
+
+```json
+{
+  "user_id": "3c6e6834-cffb-4a17-845d-905d94f05f50",
+  "full_name": "John Doe",
+  "phone": "9876543210",
+  "email": "john.doe@example.com",
+  "gender": "Male",
+  "resume_url": "https://example.com/resume.pdf",
+  "graduation_year": 2026,
+  "cgpa": 9.41,
+  "college_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+  "created_at": "2024-11-15T10:30:00.000Z",
+  "updated_at": "2024-11-15T10:30:00.000Z",
+  "college": {
+    "college_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+    "name": "IIIT Hyderabad",
+    "branch": "Computer Science",
+    "degree": "B Tech (Bachelor of Technology)",
+    "created_at": "2024-11-15T10:30:00.000Z",
+    "updated_at": "2024-11-15T10:30:00.000Z"
+  },
+  "assessments": [
+    {
+      "assessment_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "student_id": "3c6e6834-cffb-4a17-845d-905d94f05f50",
+      "taken_at": "Oct 12, 2024",
+      "report_url": "https://example.com/assessment-report.pdf",
+      "org_assess_id": "o1o2o3o4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "total_student_score": 189,
+      "total_assessment_score": 210,
+      "percent": 90,
+      "attempt_end_reason": null,
+      "proctor_details": null,
+      "created_at": "2024-11-15T10:30:00.000Z",
+      "updated_at": "2024-11-15T10:30:00.000Z",
+      "assessment_scores": [
+        {
+          "assessment_score_id": "s1s2s3s4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+          "assessment_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+          "score_type_id": "t1t2t3t4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+          "score": 84.57,
+          "max_score": 120,
+          "time_spent": 85.5,
+          "duration": 90,
+          "created_at": "2024-11-15T10:30:00.000Z",
+          "score_type": {
+            "score_type_id": "t1t2t3t4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+            "key": "coding",
+            "display_name": "Coding",
+            "description": "Coding",
+            "created_at": "2024-11-15T10:30:00.000Z"
+          }
+        }
+      ]
+    }
+  ],
+  "interviews": [
+    {
+      "interview_id": "i1i2i3i4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "student_id": "3c6e6834-cffb-4a17-845d-905d94f05f50",
+      "interview_date": "Oct 12, 2024",
+      "recording_url": "https://example.com/interview-recording.mp4",
+      "communication_rating": 5,
+      "core_cs_theory_rating": 5,
+      "dsa_theory_rating": 4,
+      "problem1_solving_rating": 4.5,
+      "problem1_code_implementation_rating": 4,
+      "problem1_solving_rating_code": "LEETCODE-123",
+      "problem2_solving_rating": 4,
+      "problem2_code_implementation_rating": 4,
+      "problem2_solving_rating_code": "LEETCODE-456",
+      "overall_interview_score_out_of_100": 96,
+      "notes": "Excellent candidate with strong problem-solving skills.",
+      "audit_final_status": "STRONG HIRE",
+      "created_at": "2024-11-15T10:30:00.000Z"
+    }
+  ]
+}
 ```
 
 **Error Responses**:
@@ -585,7 +698,7 @@ Content-Type: application/json
   "viewId": "v1v2v3v4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
   "userId": "u1u2u3u4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
   "candidateId": "3c6e6834-cffb-4a17-845d-905d94f05f50",
-  "viewedAt": "2024-11-15T10:30:00+05:30"
+  "viewedAt": "2024-11-15T10:30:00.000Z"
 }
 ```
 
@@ -594,7 +707,7 @@ Content-Type: application/json
 - `viewId` (string, UUID): Unique identifier for the view record
 - `userId` (string, UUID): User's unique identifier (created if new)
 - `candidateId` (string): Candidate's nxtwave_user_id
-- `viewedAt` (string, ISO 8601): Timestamp when view was logged (India timezone)
+- `viewedAt` (string, ISO 8601): Timestamp when view was logged (UTC format, can be converted to India timezone for display)
 
 **Example**:
 ```bash
@@ -613,11 +726,18 @@ curl -X POST http://localhost:3001/api/candidates/3c6e6834-cffb-4a17-845d-905d94
 - If user exists, their information (name, company, phone) is updated if provided
 - Multiple views by same user for same candidate are allowed (tracked with different timestamps)
 - Candidate name is automatically fetched and stored in the view record
+- The `viewedAt` timestamp is in ISO 8601 format, stored in UTC but can be converted to India timezone (IST) for display
 
 **Error Responses**:
 - **400 Bad Request**: Missing required fields (email, name) or invalid email format
 - **404 Not Found**: Candidate with given ID does not exist
 - **500 Internal Server Error**: Database error
+
+**Implementation Notes**:
+- The endpoint verifies the candidate exists before logging the view
+- User information is automatically updated if the user already exists
+- The `viewedAt` timestamp is stored in UTC format (ISO 8601)
+- Candidate name is fetched from the database and stored in the view record for historical tracking
 
 ---
 
@@ -660,7 +780,7 @@ GET /api/users/{email}/candidates?page=1&limit=20&sort=viewed_at&order=desc
       "viewId": "v1v2v3v4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
       "candidateId": "3c6e6834-cffb-4a17-845d-905d94f05f50",
       "candidateName": "NE Can-1",
-      "viewedAt": "2024-11-15T10:30:00+05:30",
+      "viewedAt": "2024-11-15T10:30:00.000Z",
       "candidate": {
         "cgpa": "9.41",
         "college": "IIIT Hyderabad",
@@ -709,6 +829,12 @@ curl "http://localhost:3001/api/users/hr@company.com/candidates?page=1&limit=10&
 - **404 Not Found**: User with given email does not exist
 - **500 Internal Server Error**: Database error
 
+**Implementation Notes**:
+- User email and phone are masked in the response for privacy
+- Candidate names are aliased (e.g., "NE Can-01") for privacy
+- Candidate details (CGPA, college, branch) are fetched and included if available
+- Sorting by `candidate_name` sorts by the aliased name, not the actual name
+
 ---
 
 ### GET `/api/candidates/:id/viewers`
@@ -755,7 +881,7 @@ GET /api/candidates/{id}/viewers?page=1&limit=20&sort=viewed_at&order=desc
         "company": "Tech Corp",
         "phone": "+91 9876543210"
       },
-      "viewedAt": "2024-11-15T10:30:00+05:30"
+      "viewedAt": "2024-11-15T10:30:00.000Z"
     }
   ],
   "pagination": {
@@ -793,6 +919,13 @@ curl "http://localhost:3001/api/candidates/3c6e6834-cffb-4a17-845d-905d94f05f50/
 - **400 Bad Request**: Invalid candidate ID format or invalid query parameters
 - **404 Not Found**: Candidate with given ID does not exist
 - **500 Internal Server Error**: Database error
+
+**Implementation Notes**:
+- Candidate name is aliased (e.g., "NE Can-01") for privacy
+- User emails and phones are masked in the response
+- Sorting by `user_name` is done post-query after fetching user data
+- `totalViews` includes all views (including repeat views by same user)
+- `uniqueViewers` counts distinct users who viewed the candidate
 
 ---
 
@@ -870,6 +1003,12 @@ curl "http://localhost:3001/api/users/hr@company.com/stats"
 - `viewsByDate` is sorted by date descending (most recent first)
 - Limited to last 30 days of data
 - If user has no views, `firstViewAt` and `lastViewAt` will be `undefined`
+
+**Implementation Notes**:
+- User email and phone are masked in the response for privacy
+- Date grouping converts UTC timestamps to India timezone (IST) for accurate daily counts
+- Statistics are calculated from all view records, not just recent ones
+- The `viewsByDate` array only includes dates with at least one view
 
 ---
 
@@ -1061,6 +1200,10 @@ curl http://localhost:3001/api/students/3c6e6834-cffb-4a17-845d-905d94f05f50
 
 ## Version History
 
+- **v1.1.0** (2025-11-25): 
+  - Added `includeAllData` and `complete` query parameters to `/api/students/:id` endpoint
+  - Updated documentation for complete data mode
+  - Clarified response structure differences between anonymized and complete data modes
 - **v1.0.0** (2024-11-15): Initial API specification
 
 ---

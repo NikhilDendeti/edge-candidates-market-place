@@ -27,7 +27,7 @@ export async function logCandidateView(
     const { data: student, error: studentError } = await supabase
       .from('students')
       .select('full_name')
-      .eq('nxtwave_user_id', candidateId)
+      .eq('user_id', candidateId)
       .single()
 
     if (studentError) {
@@ -202,13 +202,13 @@ export async function getUserViewHistory(
     const candidateIds = [...new Set((views || []).map((v: any) => v.candidate_id))]
     const { data: studentsData } = await supabase
       .from('students')
-      .select('nxtwave_user_id, cgpa, college_id, colleges(name, branch)')
-      .in('nxtwave_user_id', candidateIds)
+      .select('user_id, cgpa, college_id, colleges(name, branch)')
+      .in('user_id', candidateIds)
 
     // Create a map for quick lookup
     const candidateMap = new Map(
       (studentsData || []).map((s: any) => [
-        s.nxtwave_user_id,
+        s.user_id,
         {
           cgpa: s.cgpa?.toFixed(2),
           college: s.colleges?.name,
@@ -262,7 +262,7 @@ export async function getCandidateViewers(
     const { data: student, error: studentError } = await supabase
       .from('students')
       .select('full_name')
-      .eq('nxtwave_user_id', candidateId)
+      .eq('user_id', candidateId)
       .single()
 
     if (studentError) {

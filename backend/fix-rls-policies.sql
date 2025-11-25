@@ -24,7 +24,7 @@ ALTER TABLE assessments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE assessment_scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE interviews ENABLE ROW LEVEL SECURITY;
 
--- Check if users and candidate_views tables exist and enable RLS if they do
+-- Enable RLS on users and candidate_views tables if they exist
 DO $$
 BEGIN
   IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'users') THEN
@@ -33,6 +33,30 @@ BEGIN
   
   IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'candidate_views') THEN
     ALTER TABLE candidate_views ENABLE ROW LEVEL SECURITY;
+  END IF;
+END $$;
+
+-- Drop existing policies for users and candidate_views if they exist
+DROP POLICY IF EXISTS "Allow service role full access to users" ON users;
+DROP POLICY IF EXISTS "Allow service role full access to candidate_views" ON candidate_views;
+DROP POLICY IF EXISTS "Allow public read access" ON users;
+DROP POLICY IF EXISTS "Allow public read access" ON candidate_views;
+
+-- Create policies for users table (if table exists)
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'users') THEN
+    -- Policy for service role to INSERT, SELECT, UPDATE on users
+    EXECUTE 'CREATE POLICY "Allow service role full access to users" ON users FOR ALL USING (true) WITH CHECK (true)';
+  END IF;
+END $$;
+
+-- Create policies for candidate_views table (if table exists)
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'candidate_views') THEN
+    -- Policy for service role to INSERT, SELECT on candidate_views
+    EXECUTE 'CREATE POLICY "Allow service role full access to candidate_views" ON candidate_views FOR ALL USING (true) WITH CHECK (true)';
   END IF;
 END $$;
 
@@ -110,7 +134,8 @@ CREATE POLICY "Allow public read access" ON interviews
 --
 -- But this is NOT necessary - service_role bypasses RLS by default.
 
--- ============================================================================
+-- ===============================
+=============================================
 -- Verify Policies
 -- ============================================================================
 
