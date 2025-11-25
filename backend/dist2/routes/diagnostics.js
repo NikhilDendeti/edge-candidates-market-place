@@ -29,7 +29,7 @@ router.get('/test-db', async (_req, res) => {
         // Test 2: Fetch one student
         const { data: studentData, error: studentError } = await supabase
             .from('students')
-            .select('nxtwave_user_id, full_name')
+            .select('user_id, full_name')
             .limit(1);
         if (studentError) {
             return res.status(500).json({
@@ -47,7 +47,7 @@ router.get('/test-db', async (_req, res) => {
         const { data: nestedData, error: nestedError } = await supabase
             .from('students')
             .select(`
-        nxtwave_user_id,
+        user_id,
         colleges (name, branch)
       `)
             .limit(1);
@@ -116,7 +116,7 @@ router.get('/test-db', async (_req, res) => {
                     success: true,
                     hasData: !!complexData?.length,
                     sample: complexData?.[0] ? {
-                        id: complexData[0].nxtwave_user_id,
+                        id: complexData[0].user_id,
                         hasColleges: !!complexData[0].colleges,
                         hasAssessments: !!complexData[0].assessments,
                         hasInterviews: !!complexData[0].interviews,
