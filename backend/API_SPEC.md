@@ -13,7 +13,8 @@
 3. [Candidates Endpoints](#candidates-endpoints)
 4. [Students Endpoints](#students-endpoints)
 5. [View Tracking Endpoints](#view-tracking-endpoints)
-6. [Error Responses](#error-responses)
+6. [Diagnostics Endpoints](#diagnostics-endpoints)
+7. [Error Responses](#error-responses)
 
 ---
 
@@ -183,10 +184,12 @@ GET /api/candidates?page=1&limit=20&search=john&verdict=Strong&sort=assessment_a
 |-----------|------|----------|---------|-------------|
 | `page` | number | No | `1` | Page number (must be positive integer) |
 | `limit` | number | No | `20` | Items per page (max: 100, must be positive) |
-| `search` | string | No | - | Search by name, college, or branch (case-insensitive partial match) |
+| `search` | string | No | - | Search by name (case-insensitive partial match). Note: Currently only searches candidate names due to database limitations |
 | `verdict` | enum | No | `All` | Filter by verdict: `Strong`, `Medium`, `Low`, or `All` |
 | `sort` | enum | No | `latest` | Sort field: `assessment_avg`, `interview_avg`, `cgpa`, or `latest` |
 | `order` | enum | No | `desc` | Sort order: `asc` or `desc` |
+| `includeAllData` | boolean | No | `false` | If `true`, returns all raw database fields without anonymization (unredacted email, phone, resume URLs, etc.) |
+| `complete` | boolean | No | `false` | Alias for `includeAllData` (same functionality) |
 
 **Sort Options**:
 - `assessment_avg`: Sort by assessment score (highest first)
@@ -283,11 +286,28 @@ curl "http://localhost:3001/api/candidates?page=2&limit=10"
 curl "http://localhost:3001/api/candidates?search=hyderabad&verdict=Strong&sort=assessment_avg&order=desc&page=1&limit=20"
 ```
 
+**Response Modes**:
+
+1. **Default Mode** (without `includeAllData=true`):
+   - Returns anonymized/transformed data
+   - Names are aliased (e.g., "NE Can-01")
+   - Email and phone are masked
+   - Resume URLs are redacted (empty array)
+   - Optimized for frontend display
+
+2. **Complete Data Mode** (with `includeAllData=true` or `complete=true`):
+   - Returns all raw database fields
+   - Full names, unmasked emails/phones
+   - Complete resume URLs
+   - All assessment and interview details with nested structures
+   - Matches database schema exactly
+
 **Notes**:
-- Search is case-insensitive and matches against name, college name, or branch
+- Search is case-insensitive and currently matches against candidate name only (college/branch search has database limitations)
 - Verdict filter maps: `Strong` → `"Strong Hire"`, `Medium` → `"Medium Fit"`, `Low` → `"Consider"`
 - Skills are automatically derived from assessment scores (threshold: 70%)
 - Assessment and interview scores are from the latest assessment/interview for each student
+- When `includeAllData=true` or `complete=true`, response structure changes to match raw database schema
 
 ---
 
@@ -1012,6 +1032,101 @@ curl "http://localhost:3001/api/users/hr@company.com/stats"
 
 ---
 
+## Diagnostics Endpoints
+
+### GET `/api/diagnostics/test-db`
+
+Test database connectivity and service role access. This endpoint performs multiple database queries to verify the connection and query capabilities.
+
+**Request**:
+```http
+GET /api/diagnostics/test-db
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "message": "All database tests passed",
+  "results": {
+    "simpleCount": { "count": 25 },
+    "fetchOne": {
+      "success": true,
+      "hasData": true,
+      "sample": {
+        "user_id": "606567e1-3768-4fd7-b7e6-9481c0e64b57",
+        "full_name": "John Doe"
+      }
+    },
+    "nestedQuery": {
+      "success": true,
+      "hasData": true,
+      "sample": {
+        "user_id": "606567e1-3768-4fd7-b7e6-9481c0e64b57",
+        "colleges": {
+          "name": "IIIT Hyderabad",
+          "branch": "Computer Science"
+        }
+      }
+    },
+    "complexNestedQuery": {
+      "success": true,
+      "hasData": true,
+      "sample": {
+        "id": "606567e1-3768-4fd7-b7e6-9481c0e64b57",
+        "hasColleges": true,
+        "hasAssessments": true,
+        "hasInterviews": true
+      }
+    }
+  }
+}
+```
+
+**Error Response** (500 Internal Server Error):
+```json
+{
+  "success": false,
+  "test": "fetch_one_student",
+  "error": {
+    "code": "42703",
+    "message": "column students.nxtwave_user_id does not exist",
+    "details": null,
+    "hint": null
+  },
+  "previousTests": {
+    "simpleCount": { "success": true, "count": 25 },
+    "fetchOne": { "success": true, "hasData": true },
+    "nestedQuery": { "success": true, "hasData": true }
+  }
+}
+```
+
+**Response Fields**:
+- `success` (boolean): Whether all tests passed
+- `message` (string, optional): Success message if all tests passed
+- `results` (object, optional): Test results if successful
+  - `simpleCount` (object): Simple count query result
+  - `fetchOne` (object): Single record fetch result
+  - `nestedQuery` (object): Nested query result
+  - `complexNestedQuery` (object): Complex nested query result
+- `test` (string, optional): Name of the test that failed
+- `error` (object, optional): Error details if a test failed
+- `previousTests` (object, optional): Results of tests that passed before failure
+
+**Example**:
+```bash
+curl http://localhost:3001/api/diagnostics/test-db
+```
+
+**Notes**:
+- This endpoint is primarily for debugging and monitoring
+- Tests multiple database query patterns to verify connectivity
+- Returns detailed error information if any test fails
+- Useful for verifying database schema and RLS policies
+
+---
+
 ## Error Responses
 
 All endpoints may return the following error responses:
@@ -1200,6 +1315,11 @@ curl http://localhost:3001/api/students/3c6e6834-cffb-4a17-845d-905d94f05f50
 
 ## Version History
 
+- **v1.2.0** (2025-11-25): 
+  - Added `includeAllData` and `complete` query parameters to `/api/candidates` endpoint
+  - Added Diagnostics endpoints section documenting `/api/diagnostics/test-db`
+  - Updated search documentation to reflect current limitations (name-only search)
+  - Clarified response modes for candidates endpoint (default vs complete data)
 - **v1.1.0** (2025-11-25): 
   - Added `includeAllData` and `complete` query parameters to `/api/students/:id` endpoint
   - Updated documentation for complete data mode
