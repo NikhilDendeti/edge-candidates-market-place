@@ -127,6 +127,26 @@ function deriveSkillsWithCommunication(
 }
 
 /**
+ * Calculate assessment totals from assessment_scores array
+ */
+function calculateAssessmentTotals(assessmentScores?: Array<{ score: number; max_score: number }>): {
+  totalStudentScore: number
+  totalAssessmentScore: number
+} {
+  if (!assessmentScores || assessmentScores.length === 0) {
+    return { totalStudentScore: 0, totalAssessmentScore: 0 }
+  }
+
+  const totalStudentScore = assessmentScores.reduce((sum, as) => sum + Number(as.score || 0), 0)
+  const totalAssessmentScore = assessmentScores.reduce((sum, as) => sum + Number(as.max_score || 0), 0)
+
+  return {
+    totalStudentScore,
+    totalAssessmentScore,
+  }
+}
+
+/**
  * Transform student record to Candidate type
  */
 export function transformToCandidate(student: StudentRecord): Candidate {
@@ -137,9 +157,26 @@ export function transformToCandidate(student: StudentRecord): Candidate {
   // Format assessment score
   let assessmentScore = 'N/A'
   let assessmentMeta = 'No assessment'
-  if (latestAssessment && latestAssessment.total_student_score && latestAssessment.total_assessment_score) {
-    assessmentScore = `${latestAssessment.total_student_score} / ${latestAssessment.total_assessment_score}`
-    assessmentMeta = `Last taken: ${formatDate(latestAssessment.taken_at)}`
+  if (latestAssessment) {
+    // Calculate totals from assessment_scores array
+    const calculatedTotals = calculateAssessmentTotals(latestAssessment.assessment_scores)
+    
+    // Use calculated values if we have assessment_scores, otherwise try stored values
+    // Prefer calculated values as they're more reliable (sum of actual scores)
+    const totalStudentScore = calculatedTotals.totalStudentScore > 0 
+      ? calculatedTotals.totalStudentScore 
+      : (latestAssessment.total_student_score ?? 0)
+    const totalAssessmentScore = calculatedTotals.totalAssessmentScore > 0
+      ? calculatedTotals.totalAssessmentScore
+      : (latestAssessment.total_assessment_score ?? 0)
+    
+    // Show score if we have valid assessment data (either calculated or stored)
+    const hasAssessmentScores = latestAssessment.assessment_scores && latestAssessment.assessment_scores.length > 0
+    const hasStoredScore = latestAssessment.total_student_score && latestAssessment.total_student_score > 0
+    if (totalAssessmentScore > 0 && (hasAssessmentScores || hasStoredScore)) {
+      assessmentScore = `${totalStudentScore} / ${totalAssessmentScore}`
+      assessmentMeta = `Last taken: ${formatDate(latestAssessment.taken_at)}`
+    }
   }
 
   // Format interview score
@@ -212,12 +249,24 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
   const cgpa = student.cgpa ? `${student.cgpa.toFixed(2)} / 10.0` : '0.00 / 10.0'
 
   // Assessment overall
-  const assessmentOverall = latestAssessment && latestAssessment.percent
-    ? {
-        percentage: Math.round(latestAssessment.percent),
-        raw: `${latestAssessment.total_student_score || 0} / ${latestAssessment.total_assessment_score || 0}`,
+  let assessmentOverall = { percentage: 0, raw: '0 / 0' }
+  if (latestAssessment && latestAssessment.assessment_scores && latestAssessment.assessment_scores.length > 0) {
+    // Calculate totals from assessment_scores if not already present
+    const calculatedTotals = calculateAssessmentTotals(latestAssessment.assessment_scores)
+    
+    // Use stored values if available, otherwise use calculated values
+    const totalStudentScore = latestAssessment.total_student_score ?? calculatedTotals.totalStudentScore
+    const totalAssessmentScore = latestAssessment.total_assessment_score ?? calculatedTotals.totalAssessmentScore
+    
+    // Calculate percentage if we have valid totals
+    if (totalAssessmentScore > 0) {
+      const percentage = latestAssessment.percent ?? Math.round((totalStudentScore / totalAssessmentScore) * 100)
+      assessmentOverall = {
+        percentage: Math.round(percentage),
+        raw: `${totalStudentScore} / ${totalAssessmentScore}`,
       }
-    : { percentage: 0, raw: '0 / 0' }
+    }
+  }
 
   // Interview overall
   let interviewOverall = { percentage: 0, raw: '0 / 100' }
@@ -390,15 +439,29 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     },
     assessmentOverall,
     interviewOverall,
-    latestAssessment: latestAssessment ? {
-      assessmentId: latestAssessment.assessment_id,
-      takenAt: latestAssessment.taken_at,
-      reportUrl: redactToEmptyArray(),
-      totalStudentScore: latestAssessment.total_student_score || 0,
-      totalAssessmentScore: latestAssessment.total_assessment_score || 0,
-      percent: latestAssessment.percent || 0,
-      scores: assessmentScores,
-    } : undefined,
+    latestAssessment: latestAssessment && latestAssessment.assessment_scores && latestAssessment.assessment_scores.length > 0 ? (() => {
+      // Calculate totals from assessment_scores if not already present
+      const calculatedTotals = calculateAssessmentTotals(latestAssessment.assessment_scores)
+      
+      // Use stored values if available, otherwise use calculated values
+      const totalStudentScore = latestAssessment.total_student_score ?? calculatedTotals.totalStudentScore
+      const totalAssessmentScore = latestAssessment.total_assessment_score ?? calculatedTotals.totalAssessmentScore
+      
+      // Calculate percentage if we have valid totals
+      const percent = latestAssessment.percent ?? (totalAssessmentScore > 0 
+        ? Math.round((totalStudentScore / totalAssessmentScore) * 100) 
+        : 0)
+      
+      return {
+        assessmentId: latestAssessment.assessment_id,
+        takenAt: latestAssessment.taken_at,
+        reportUrl: redactToEmptyArray(),
+        totalStudentScore,
+        totalAssessmentScore,
+        percent,
+        scores: assessmentScores,
+      }
+    })() : undefined,
     latestInterview: latestInterview ? {
       interviewId: latestInterview.interview_id,
       interviewDate: latestInterview.interview_date,

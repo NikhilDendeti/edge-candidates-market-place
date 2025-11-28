@@ -61,6 +61,39 @@ export async function getCandidates(filters) {
                 hint: error.hint,
             });
         }
+        // Ensure assessment_scores are loaded for each assessment (fallback if nested query didn't load them)
+        if (data) {
+            for (const student of data) {
+                if (student.assessments && Array.isArray(student.assessments)) {
+                    for (const assessment of student.assessments) {
+                        // Check if assessment_scores is missing or empty, and fetch separately if needed
+                        // Note: Supabase nested queries sometimes don't load relations properly
+                        if (!assessment.assessment_scores || assessment.assessment_scores.length === 0) {
+                            try {
+                                const { data: scores } = await supabase
+                                    .from('assessment_scores')
+                                    .select(`
+                    *,
+                    score_types (*)
+                  `)
+                                    .eq('assessment_id', assessment.assessment_id);
+                                if (scores && scores.length > 0) {
+                                    assessment.assessment_scores = scores;
+                                }
+                                else {
+                                    assessment.assessment_scores = [];
+                                }
+                            }
+                            catch (nestedError) {
+                                // Silently fail - assessment_scores will remain empty
+                                console.warn('Failed to fetch assessment_scores for assessment:', assessment.assessment_id, nestedError);
+                                assessment.assessment_scores = [];
+                            }
+                        }
+                    }
+                }
+            }
+        }
         // Transform data - use complete data transformer if requested
         let candidates = (data || []).map(filters.includeAllData ? transformToCompleteCandidateData : transformToCandidate);
         // Calculate verdict counts BEFORE applying verdict filter (but after search filter)
@@ -104,11 +137,17 @@ export async function getCandidates(filters) {
         // Apply assessment/interview sorting if needed (post-query)
         if (filters.sort === 'assessment_avg') {
             candidates.sort((a, b) => {
-                // Extract numeric score from "XXX / YYY" format, handle "N/A" case
-                const aScoreStr = a.assessmentScore === 'N/A' ? '0' : a.assessmentScore.split(' / ')[0];
-                const bScoreStr = b.assessmentScore === 'N/A' ? '0' : b.assessmentScore.split(' / ')[0];
-                const aScore = parseFloat(aScoreStr) || 0;
-                const bScore = parseFloat(bScoreStr) || 0;
+                // Extract numeric values from "XXX / YYY" format, handle "N/A" case
+                let aScore = 0;
+                let bScore = 0;
+                if (a.assessmentScore !== 'N/A') {
+                    const [studentScore, maxScore] = a.assessmentScore.split(' / ').map((s) => parseFloat(s) || 0);
+                    aScore = maxScore > 0 ? (studentScore / maxScore) * 100 : 0;
+                }
+                if (b.assessmentScore !== 'N/A') {
+                    const [studentScore, maxScore] = b.assessmentScore.split(' / ').map((s) => parseFloat(s) || 0);
+                    bScore = maxScore > 0 ? (studentScore / maxScore) * 100 : 0;
+                }
                 return filters.order === 'asc' ? aScore - bScore : bScore - aScore;
             });
         }
