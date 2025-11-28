@@ -174,7 +174,9 @@ export function transformToCandidate(student: StudentRecord): Candidate {
     const hasAssessmentScores = latestAssessment.assessment_scores && latestAssessment.assessment_scores.length > 0
     const hasStoredScore = latestAssessment.total_student_score && latestAssessment.total_student_score > 0
     if (totalAssessmentScore > 0 && (hasAssessmentScores || hasStoredScore)) {
-      assessmentScore = `${totalStudentScore} / ${totalAssessmentScore}`
+      // Round to 2 decimal places
+      const roundedStudentScore = Math.round(totalStudentScore * 100) / 100
+      assessmentScore = `${roundedStudentScore.toFixed(2)} / ${totalAssessmentScore}`
       assessmentMeta = `Last taken: ${formatDate(latestAssessment.taken_at)}`
     }
   }
@@ -261,9 +263,11 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     // Calculate percentage if we have valid totals
     if (totalAssessmentScore > 0) {
       const percentage = latestAssessment.percent ?? Math.round((totalStudentScore / totalAssessmentScore) * 100)
+      // Round to 2 decimal places
+      const roundedStudentScore = Math.round(totalStudentScore * 100) / 100
       assessmentOverall = {
         percentage: Math.round(percentage),
-        raw: `${totalStudentScore} / ${totalAssessmentScore}`,
+        raw: `${roundedStudentScore.toFixed(2)} / ${totalAssessmentScore}`,
       }
     }
   }
@@ -452,11 +456,14 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
         ? Math.round((totalStudentScore / totalAssessmentScore) * 100) 
         : 0)
       
+      // Round totalStudentScore to 2 decimal places to avoid floating point precision issues
+      const roundedTotalStudentScore = Math.round(totalStudentScore * 100) / 100
+      
       return {
         assessmentId: latestAssessment.assessment_id,
         takenAt: latestAssessment.taken_at,
         reportUrl: redactToEmptyArray(),
-        totalStudentScore,
+        totalStudentScore: roundedTotalStudentScore,
         totalAssessmentScore,
         percent,
         scores: assessmentScores,
