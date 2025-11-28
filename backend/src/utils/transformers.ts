@@ -413,7 +413,7 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     interviewId: i.interview_id,
     interviewDate: i.interview_date,
     overallLabel: mapAuditStatusToLabel(i.audit_final_status),
-    recordingUrl: redactToEmptyArray(),
+    recordingUrl: i.recording_url || ([] as []),
   })) || []
 
   return {
@@ -465,7 +465,7 @@ export function transformToStudentProfile(student: StudentRecord): StudentProfil
     latestInterview: latestInterview ? {
       interviewId: latestInterview.interview_id,
       interviewDate: latestInterview.interview_date,
-      recordingUrl: redactToEmptyArray(),
+      recordingUrl: latestInterview.recording_url || ([] as []),
       scores: interviewScores,
       overallRating: latestInterview.overall_interview_score_out_of_100 !== null && latestInterview.overall_interview_score_out_of_100 !== undefined
         ? latestInterview.overall_interview_score_out_of_100

@@ -39,7 +39,7 @@ export interface StudentProfile {
     latestInterview?: {
         interviewId: string;
         interviewDate: string;
-        recordingUrl?: [];
+        recordingUrl?: string | [];
         scores: InterviewScore[];
         overallRating: number;
         overallLabel: 'Strong Hire' | 'Medium Fit' | 'Consider';
@@ -62,7 +62,7 @@ export interface StudentProfile {
         interviewId: string;
         interviewDate: string;
         overallLabel: string;
-        recordingUrl?: [];
+        recordingUrl?: string | [];
     }>;
 }
 export interface AssessmentScore {
