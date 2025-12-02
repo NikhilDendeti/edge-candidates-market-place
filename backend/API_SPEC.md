@@ -332,7 +332,7 @@ GET /api/students/{id}?includeAllData=true
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `includeAllData` | boolean | No | `false` | If `true`, returns all raw database fields without anonymization (unredacted email, phone, resume URLs, etc.) |
+| `includeAllData` | boolean | No | `false` | If `true`, returns all database fields with anonymization applied (aliased names, masked emails/phones, redacted URLs) |
 | `complete` | boolean | No | `false` | Alias for `includeAllData` (same functionality) |
 
 **Response Modes**:
@@ -345,9 +345,10 @@ GET /api/students/{id}?includeAllData=true
    - Optimized for frontend display
 
 2. **Complete Data Mode** (with `includeAllData=true` or `complete=true`):
-   - Returns all raw database fields
-   - Full names, unmasked emails/phones
-   - Complete resume URLs
+   - Returns all database fields with anonymization applied
+   - Names are aliased (e.g., "NE Can-01")
+   - Email and phone are masked
+   - Resume URLs and recording URLs are redacted (empty array)
    - All assessment and interview details with nested structures
    - Matches database schema exactly
 
@@ -588,16 +589,16 @@ curl "http://localhost:3001/api/students/3c6e6834-cffb-4a17-845d-905d94f05f50?co
 
 **Complete Data Response** (when `includeAllData=true`):
 
-When `includeAllData=true` is used, the response structure changes to match the raw database schema:
+When `includeAllData=true` is used, the response structure changes to match the raw database schema, but with anonymization applied:
 
 ```json
 {
   "user_id": "3c6e6834-cffb-4a17-845d-905d94f05f50",
-  "full_name": "John Doe",
-  "phone": "9876543210",
-  "email": "john.doe@example.com",
+  "full_name": "NE Can-01",
+  "phone": "9********0",
+  "email": "jo************@**.**",
   "gender": "Male",
-  "resume_url": "https://example.com/resume.pdf",
+  "resume_url": [],
   "graduation_year": 2026,
   "cgpa": 9.41,
   "college_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
@@ -616,7 +617,7 @@ When `includeAllData=true` is used, the response structure changes to match the 
       "assessment_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
       "student_id": "3c6e6834-cffb-4a17-845d-905d94f05f50",
       "taken_at": "Oct 12, 2024",
-      "report_url": "https://example.com/assessment-report.pdf",
+      "report_url": [],
       "org_assess_id": "o1o2o3o4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
       "total_student_score": 189,
       "total_assessment_score": 210,
@@ -651,7 +652,7 @@ When `includeAllData=true` is used, the response structure changes to match the 
       "interview_id": "i1i2i3i4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
       "student_id": "3c6e6834-cffb-4a17-845d-905d94f05f50",
       "interview_date": "Oct 12, 2024",
-      "recording_url": "https://example.com/interview-recording.mp4",
+      "recording_url": [],
       "communication_rating": 5,
       "core_cs_theory_rating": 5,
       "dsa_theory_rating": 4,
