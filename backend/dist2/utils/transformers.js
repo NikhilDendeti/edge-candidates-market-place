@@ -457,7 +457,7 @@ export function transformToCompleteStudentData(student) {
             interview_id: interview.interview_id,
             student_id: interview.student_id,
             interview_date: interview.interview_date,
-            recording_url: redactToEmptyArray(),
+            recording_url: interview.recording_url || null,
             communication_rating: interview.communication_rating,
             core_cs_theory_rating: interview.core_cs_theory_rating,
             dsa_theory_rating: interview.dsa_theory_rating,

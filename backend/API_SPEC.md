@@ -348,7 +348,8 @@ GET /api/students/{id}?includeAllData=true
    - Returns all database fields with anonymization applied
    - Names are aliased (e.g., "NE Can-01")
    - Email and phone are masked
-   - Resume URLs and recording URLs are redacted (empty array)
+   - Resume URLs and report URLs are redacted (empty array)
+   - Interview recording URLs are included as-is
    - All assessment and interview details with nested structures
    - Matches database schema exactly
 
@@ -652,7 +653,7 @@ When `includeAllData=true` is used, the response structure changes to match the 
       "interview_id": "i1i2i3i4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
       "student_id": "3c6e6834-cffb-4a17-845d-905d94f05f50",
       "interview_date": "Oct 12, 2024",
-      "recording_url": [],
+      "recording_url": "https://example.com/interview-recording.mp4",
       "communication_rating": 5,
       "core_cs_theory_rating": 5,
       "dsa_theory_rating": 4,
