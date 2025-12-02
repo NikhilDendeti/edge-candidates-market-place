@@ -388,18 +388,21 @@ export function transformToStudentProfile(student) {
     };
 }
 /**
- * Transform student record to complete raw data (no anonymization)
- * Returns all database fields as-is
+ * Transform student record to complete data with anonymization applied
+ * Returns all database fields with sensitive data morphed (aliased names, masked emails/phones, redacted URLs)
  */
 export function transformToCompleteStudentData(student) {
+    const alias = getCandidateAlias(student.user_id);
+    const maskedEmail = student.email ? maskEmail(student.email) : student.email;
+    const maskedPhone = student.phone ? maskPhone(student.phone) : student.phone;
     return {
         // Student fields
         user_id: student.user_id,
-        full_name: student.full_name,
-        phone: student.phone,
-        email: student.email,
+        full_name: alias,
+        phone: maskedPhone,
+        email: maskedEmail,
         gender: student.gender,
-        resume_url: student.resume_url,
+        resume_url: redactToEmptyArray(),
         graduation_year: student.graduation_year,
         cgpa: student.cgpa,
         college_id: student.college_id,
@@ -422,7 +425,7 @@ export function transformToCompleteStudentData(student) {
             assessment_id: assessment.assessment_id,
             student_id: assessment.student_id,
             taken_at: assessment.taken_at,
-            report_url: assessment.report_url,
+            report_url: redactToEmptyArray(),
             org_assess_id: assessment.org_assess_id,
             total_student_score: assessment.total_student_score,
             total_assessment_score: assessment.total_assessment_score,
@@ -454,7 +457,7 @@ export function transformToCompleteStudentData(student) {
             interview_id: interview.interview_id,
             student_id: interview.student_id,
             interview_date: interview.interview_date,
-            recording_url: interview.recording_url,
+            recording_url: redactToEmptyArray(),
             communication_rating: interview.communication_rating,
             core_cs_theory_rating: interview.core_cs_theory_rating,
             dsa_theory_rating: interview.dsa_theory_rating,

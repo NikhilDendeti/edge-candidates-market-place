@@ -66,8 +66,8 @@ export declare function transformToCandidate(student: StudentRecord): Candidate;
  */
 export declare function transformToStudentProfile(student: StudentRecord): StudentProfile;
 /**
- * Transform student record to complete raw data (no anonymization)
- * Returns all database fields as-is
+ * Transform student record to complete data with anonymization applied
+ * Returns all database fields with sensitive data morphed (aliased names, masked emails/phones, redacted URLs)
  */
 export declare function transformToCompleteStudentData(student: StudentRecord): any;
 /**

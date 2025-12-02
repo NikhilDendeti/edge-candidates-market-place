@@ -11,7 +11,7 @@ import { transformToStudentProfile, transformToCompleteStudentData } from '../ut
 /**
  * Get student profile by ID
  * @param studentId - Student user_id
- * @param includeAllData - If true, returns all database fields without anonymization
+ * @param includeAllData - If true, returns all database fields with anonymization applied
  */
 export async function getStudentProfile(studentId: string, includeAllData: boolean = false): Promise<StudentProfile | any> {
   try {
